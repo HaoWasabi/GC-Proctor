@@ -1,11 +1,11 @@
 # GC-Proctor NoSQL ERD
 
-## Muc tieu thiet ke
-- Toi uu cho chatbot truy van nhanh, luu hoi thoai theo phien, va ho tro RAG.
-- Ket hop quan he tham chieu (reference) va du lieu nhung (embedded) theo tung nghiep vu.
-- Uu tien mo rong ngang va truy van theo user, mon hoc, ky thi, va nguon tai lieu.
+## Mục tiêu thiết kế
+- Tối ưu cho chatbot truy vấn nhanh, lưu hội thoại theo phiên, và hỗ trợ RAG.
+- Kết hợp quan hệ tham chiếu (reference) và dữ liệu nhúng (embedded) theo từng nghiệp vụ.
+- Ưu tiên mở rộng ngang và truy vấn theo user, môn học, kỳ thi, và nguồn tài liệu.
 
-## ERD theo huong NoSQL (Collection-centric)
+## ERD theo hướng NoSQL (Collection-centric)
 ```mermaid
 erDiagram
     USERS {
@@ -147,14 +147,14 @@ erDiagram
     USERS ||--o{ AUDIT_LOGS : acts
 ```
 
-## Quyet dinh mo hinh du lieu NoSQL
-- `USERS`: thong tin danh tinh chuan hoa; profile mo rong co the nhung vao field `profile` neu can.
-- `CHAT_SESSIONS` + `CHAT_MESSAGES`: tach rieng de tranh document vuot 16MB va de phan trang lich su chat.
-- `DOCUMENTS` + `DOCUMENT_CHUNKS`: toi uu RAG, cho phep re-index theo tung document.
-- `EXAM_SCHEDULES`: luu ban sao lich thi theo sinh vien de tra cuu nhanh theo `studentId`.
-- `RETRIEVAL_LOGS`: theo doi chunk nao duoc goi, phuc vu danh gia accuracy va fallback.
+## Quyết định mô hình dữ liệu NoSQL
+- `USERS`: thông tin danh tính chuẩn hóa; profile mở rộng có thể nhúng vào field `profile` nếu cần.
+- `CHAT_SESSIONS` + `CHAT_MESSAGES`: tách riêng để tránh document vượt 16MB và để phân trang lịch sử chat.
+- `DOCUMENTS` + `DOCUMENT_CHUNKS`: tối ưu RAG, cho phép re-index theo từng document.
+- `EXAM_SCHEDULES`: lưu bản sao lịch thi theo sinh viên để tra cứu nhanh theo `studentId`.
+- `RETRIEVAL_LOGS`: theo dõi chunk nào được gọi, phục vụ đánh giá accuracy và fallback.
 
-## De xuat index chinh
+## Đề xuất index chính
 - `USERS`: unique(`userCode`), unique(`email`).
 - `COURSES`: unique(`courseCode`, `semester`).
 - `EXAM_SCHEDULES`: index(`studentId`, `examDate`), index(`examId`).
@@ -164,14 +164,14 @@ erDiagram
 - `FEEDBACKS`: index(`messageId`), index(`userId`, `createdAt`).
 
 ## Embedded vs Reference
-- Nen embedded:
-  - `CHAT_MESSAGES.entities` va `CHAT_MESSAGES.citations` (nho, di cung message).
-  - metadata nho cua document trong `DOCUMENTS`.
-- Nen reference:
+- Nên embedded:
+  - `CHAT_MESSAGES.entities` và `CHAT_MESSAGES.citations` (nhỏ, đi cùng message).
+  - metadata nhỏ của document trong `DOCUMENTS`.
+- Nên reference:
   - `CHAT_SESSIONS` -> `CHAT_MESSAGES`.
   - `DOCUMENTS` -> `DOCUMENT_CHUNKS`.
   - `EXAMS` -> `EXAM_SCHEDULES`.
 
-## Luu y mo rong
-- Co the tach them collection `MODEL_CONFIGS` de quan ly prompt, retriever, fallback policy theo version.
-- Co the bo sung `TENANTS` neu sau nay can ho tro da truong/da don vi.
+## Lưu ý mở rộng
+- Có thể tách thêm collection `MODEL_CONFIGS` để quản lý prompt, retriever, fallback policy theo version.
+- Có thể bổ sung `TENANTS` nếu sau này cần hỗ trợ đa trường/đa đơn vị.
