@@ -1,26 +1,38 @@
 import json
 import os
 from fastapi import HTTPException
-
+import re
 class NLPService:
     def parse_intent(self, payload: dict) -> dict:
         question = (payload.get("question") or "").lower()
         if not question:
             return {"intent": "unknown", "confidence": 0.0, "entities": {}}
 
+        intent = "unknown"
+        entities = payload.get("entities", {})
+
+        # 1. Trích xuất tên môn học (nếu có)
+        # Ví dụ: "ôn tập môn toán cao cấp", "tài liệu vật lý đại cương"
+        course_match = re.search(
+            r'(?:môn|khoá học)\s+([a-zA-Z0-9\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]+)',
+            question)
+        if course_match:
+            entities["mentioned_course"] = course_match.group(1).strip()
+
+        # 2. Phân loại Intent
+        study_keywords = ["ôn tập", "tài liệu", "đề thi", "flashcard", "giải thích", "tóm tắt", "học bài", "ôn thi"]
+
         if "lich thi" in question or "phong" in question:
             intent = "exam_schedule"
         elif "quy che" in question or "dieu" in question:
             intent = "regulation"
-        elif "tom tat" in question or "flashcard" in question or "giai thich" in question:
+        elif any(kw in question for kw in study_keywords):
             intent = "study_support"
-        else:
-            intent = "unknown"
 
         return {
             "intent": intent,
             "confidence": 0.88 if intent != "unknown" else 0.4,
-            "entities": payload.get("entities", {}),
+            "entities": entities,
         }
 
     def fallback_check(self, payload: dict) -> dict:

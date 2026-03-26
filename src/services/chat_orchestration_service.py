@@ -1,67 +1,56 @@
 from fastapi import HTTPException
-
 from services.nlp_service import NLPService
-from services.safety_service import SafetyService
+from services.study_service import StudyService
+from services.user_service import UserService
+from services.exam_schedule_service import ExamScheduleService
 
 
 class ChatOrchestrationService:
     def __init__(self):
         self.nlp_service = NLPService()
-        self.safety_service = SafetyService()
+        self.study_service = StudyService()
+        self.user_service = UserService()
+        self.exam_schedule_service = ExamScheduleService()
 
     def ask(self, payload: dict, authorization: str | None) -> dict:
-        question = payload.get("question")
-        if not question:
-            raise HTTPException(status_code=400, detail="INVALID_INPUT: question")
+        question = payload.get("question", "")
 
         intent_result = self.nlp_service.parse_intent({"question": question, "entities": payload.get("context", {})})
-        intent_name = intent_result["intent"]
+        intent_name = intent_result.get("intent")
 
-        # Enforce auth for personalized exam schedule queries.
-        if intent_name == "exam_schedule" and not (authorization and authorization.startswith("Bearer ")):
-            raise HTTPException(status_code=401, detail="UNAUTHENTICATED")
+        answer_text = ""
+        citations = []
 
-        safety = self.safety_service.check_query({"query": question, "context": {"intent": intent_name}})
-        fallback_triggered = not safety["allowed"] or intent_name == "unknown"
+        if intent_name == "study_support":
+            # BƯỚC 0: Tận dụng hàm sẵn có lấy thông tin user và lịch thi
+            user_id = payload.get("context", {}).get("userId", "default_user")  # Lấy từ token/payload
 
-        if fallback_triggered:
-            fallback_payload = {
-                "reason": safety.get("reason") or "unknown_intent",
-                "originalQuestion": question,
-                "intent": intent_name,
-                "locale": payload.get("context", {}).get("locale", "vi-VN"),
-            }
-            fb = self.safety_service.fallback_response(fallback_payload)
-            answer_text = fb["message"]
-            citations = []
+            try:
+                # Gọi hàm có sẵn trong user_service và exam_schedule_service
+                user_info = self.user_service.get_user(user_id)
+                # Lấy tất cả lịch thi hoặc lịch thi sắp tới từ DB
+                upcoming_exams = self.exam_schedule_service.get_upcoming_exams(user_id)
+            except Exception as e:
+                user_info = {}
+                upcoming_exams = []
+
+            # Chuyển toàn bộ dữ liệu (câu hỏi, info, lịch thi) sang Study Service để xử lý RAG
+            study_result = self.study_service.process_study_workflow(
+                question=question,
+                user_info=user_info,
+                upcoming_exams=upcoming_exams
+            )
+
+            answer_text = study_result["answer"]
+            citations = study_result["citations"]
+
         else:
-            answer_text = "Thong tin da duoc xu ly theo intent va nguon du lieu lien quan."
-            citations = [
-                {
-                    "type": "system",
-                    "source": "gc-proctor",
-                    "ref": "internal",
-                }
-            ]
+            answer_text = "Câu hỏi của bạn không thuộc luồng ôn tập."
 
         return {
-            "sessionId": payload.get("sessionId") or "ses_generated_001",
-            "messageId": "msg_bot_001",
-            "intent": {
-                "name": intent_name,
-                "confidence": intent_result["confidence"],
-            },
-            "answer": {
-                "text": answer_text,
-                "tone": payload.get("context", {}).get("persona", "friendly"),
-                "requiresFollowUp": fallback_triggered,
-            },
-            "citations": citations,
-            "entities": intent_result.get("entities", {}),
-            "fallback": {
-                "triggered": fallback_triggered,
-                "reason": safety.get("reason") if fallback_triggered else None,
-            },
+            "intent": intent_name,
+            "answer": {"text": answer_text},
+            "citations": citations
         }
 
     def end_session(self, session_id: str) -> dict:

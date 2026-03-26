@@ -83,3 +83,22 @@ class StudyRepository:
             query = query.where("topic", "==", topic)
         docs = query.stream()
         return [doc.to_dict() for doc in docs]
+
+    def get_study_materials(self, course_id: str = None, topic: str = None) -> List[Dict]:
+        """Retrieve study materials from Firebase"""
+        query = self.db.collection("study_materials")
+
+        if course_id:
+            query = query.where("course_id", "==", course_id)
+        if topic:
+            query = query.where("topic", "==", topic)
+
+        docs = query.stream()
+        return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+
+    def save_study_material(self, material_data: Dict) -> Dict:
+        """Save study material link (e.g., from tailieuhust.com)"""
+        material_data["created_at"] = datetime.utcnow()
+        ref = self.db.collection("study_materials").add(material_data)
+        material_data["id"] = ref[1].id
+        return material_data

@@ -41,3 +41,6 @@ class StudyController:
 
     def explain(self, payload: ExplainRequest) -> dict:
         return self.service.explain(payload.dict())
+
+    def get_study_materials(self, payload: dict) -> dict:
+        return self.service.get_study_materials(payload)

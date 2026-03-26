@@ -3,6 +3,7 @@ from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from api.controllers.study_controller import StudyController
+from fastapi import Query
 
 
 class QueryRequest(BaseModel):
@@ -30,6 +31,12 @@ class ExplainRequest(BaseModel):
     concept: str = Field(..., description="Concept to explain")
     level: str = Field("basic", description="Explanation level: basic, intermediate, advanced")
     user_id: str = Field(..., description="User ID")
+
+class StudyMaterialsRequest(BaseModel):
+    course_id: Optional[str] = Field(None, description="Course ID")
+    topic: Optional[str] = Field(None, description="Topic name")
+    user_id: str = Field(..., description="User ID")
+
 
 
 router = APIRouter(prefix="/study", tags=["Study"])
@@ -157,7 +164,7 @@ async def explain(payload: ExplainRequest) -> dict:
 )
 async def get_study_history(
         user_id: str,
-        limit: int = Field(50, ge=1, le=500)
+        limit: int = Query(50, ge=1, le=500)
 ) -> dict:
     """Get study history for a user"""
     try:
@@ -175,7 +182,7 @@ async def get_study_history(
 )
 async def get_flashcards(
         user_id: str,
-        topic: Optional[str] = Field(None, description="Filter by topic (optional)")
+        topic: Optional[str] = Query(None, description="Filter by topic (optional)")
 ) -> dict:
     """Get flashcards for a user"""
     try:
@@ -184,3 +191,35 @@ async def get_flashcards(
     except Exception as e:
         print(f"Error in get_flashcards: {e}")
         _error(f"Error retrieving flashcards: {str(e)}", 500)
+
+
+@router.get(
+    "/materials",
+    summary="Get study materials (tài liệu học)",
+    description="Retrieve study materials and links from Firebase"
+)
+async def get_study_materials(
+        course_id: Optional[str] = None,
+        topic: Optional[str] = None,
+        user_id: str = None
+) -> dict:
+    """
+    Get study materials endpoint.
+
+    Query params:
+    - course_id (optional): Filter by course
+    - topic (optional): Filter by topic
+    - user_id (optional): User identifier
+    """
+    try:
+        result = controller.get_study_materials({
+            "course_id": course_id,
+            "topic": topic,
+            "user_id": user_id
+        })
+        return _ok(result, "req_study_materials")
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print(f"Error in get_study_materials: {e}")
+        _error(f"Error retrieving materials: {str(e)}", 500)
