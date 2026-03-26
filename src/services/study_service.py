@@ -1,7 +1,12 @@
 from fastapi import HTTPException
-
+from services.kb_service import KBService
+from services.nlp_service import NLPService
 
 class StudyService:
+    def __init__(self):
+        self.kb_service = KBService()
+        self.nlp_service = NLPService()
+
     def query(self, payload: dict) -> dict:
         question = payload.get("question")
         if not question:

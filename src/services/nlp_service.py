@@ -1,3 +1,7 @@
+import json
+import os
+from fastapi import HTTPException
+
 class NLPService:
     def parse_intent(self, payload: dict) -> dict:
         question = (payload.get("question") or "").lower()
@@ -30,3 +34,21 @@ class NLPService:
             "triggerFallback": trigger,
             "reason": reason,
         }
+
+    def generate_text(self, prompt: str) -> str:
+        try:
+            response = self.llm.invoke(prompt)
+            return response.content
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"LLM Error: {str(e)}")
+
+    def generate_json(self, prompt: str) -> dict:
+        try:
+            response = self.json_llm.invoke(prompt)
+
+            parsed_json = json.loads(response.content)
+            return parsed_json
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=500, detail="LLM did not return valid JSON")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"LLM Error: {str(e)}")

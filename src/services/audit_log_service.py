@@ -1,6 +1,5 @@
 from typing import List
 from typing import Optional
-
 from models.audit_log_model import AuditLogModel
 from repositories.audit_log_repository import AuditLogRepository
 from services.base_service import BaseService

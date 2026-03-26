@@ -1,7 +1,7 @@
 from fastapi import FastAPI
-
 from api import api_router
-
+from dotenv import load_dotenv
+load_dotenv()
 
 app = FastAPI(title="GC-Proctor API", version="1.0.0")
 app.include_router(api_router, prefix="/api")
