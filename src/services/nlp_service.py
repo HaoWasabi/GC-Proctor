@@ -1,65 +1,61 @@
 import json
 import os
-from fastapi import HTTPException
 import re
+import google as genai
+from fastapi import HTTPException
+
+
 class NLPService:
-    def parse_intent(self, payload: dict) -> dict:
-        question = (payload.get("question") or "").lower()
-        if not question:
-            return {"intent": "unknown", "confidence": 0.0, "entities": {}}
+    def __init__(self):
+        """Initialize Gemini API once for the service"""
+        self.api_key = os.getenv("GEMINI_API_KEY")
+        if not self.api_key:
+            raise ValueError("GEMINI_API_KEY environment variable not set")
+        genai.configure(api_key=self.api_key)
+        self.model = genai.GenerativeModel("gemini-2.5-flash")
 
-        intent = "unknown"
-        entities = payload.get("entities", {})
+    def parse_intent(self, question: str) -> dict:
+        """Extract intent from user question - SIMPLIFIED"""
+        question_lower = question.lower()
 
-        # 1. Trích xuất tên môn học (nếu có)
-        # Ví dụ: "ôn tập môn toán cao cấp", "tài liệu vật lý đại cương"
-        course_match = re.search(
-            r'(?:môn|khoá học)\s+([a-zA-Z0-9\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]+)',
-            question)
-        if course_match:
-            entities["mentioned_course"] = course_match.group(1).strip()
-
-        # 2. Phân loại Intent
-        study_keywords = ["ôn tập", "tài liệu", "đề thi", "flashcard", "giải thích", "tóm tắt", "học bài", "ôn thi"]
-
-        if "lich thi" in question or "phong" in question:
+        study_keywords = ["ôn tập", "tài liệu", "đề thi", "flashcard", "giải thích", "tóm tắt", "học bài"]
+        if "lịch thi" in question_lower or "phòng thi" in question_lower:
             intent = "exam_schedule"
-        elif "quy che" in question or "dieu" in question:
+        elif "quy chế" in question_lower or "điều lệ" in question_lower:
             intent = "regulation"
-        elif any(kw in question for kw in study_keywords):
+        elif any(kw in question_lower for kw in study_keywords):
             intent = "study_support"
+        else:
+            intent = "unknown"
 
-        return {
-            "intent": intent,
-            "confidence": 0.88 if intent != "unknown" else 0.4,
-            "entities": entities,
-        }
-
-    def fallback_check(self, payload: dict) -> dict:
-        confidence = float(payload.get("confidence", 0.0))
-        has_sources = bool(payload.get("hasSources", False))
-
-        trigger = confidence < 0.6 or not has_sources
-        reason = "low_confidence_or_missing_sources" if trigger else None
-
-        return {
-            "triggerFallback": trigger,
-            "reason": reason,
-        }
+        return {"intent": intent}
 
     def generate_text(self, prompt: str) -> str:
+        """Call Gemini API to generate text response"""
         try:
-            response = self.llm.invoke(prompt)
-            return response.content
+            response = self.model.generate_content(prompt)
+            if hasattr(response, "text"):
+                return response.text
+            elif hasattr(response, "candidates") and response.candidates:
+                parts = response.candidates[0].content.parts
+                if parts:
+                    return parts[0].text
+            return "Không thể tạo phản hồi từ Gemini"
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"LLM Error: {str(e)}")
 
     def generate_json(self, prompt: str) -> dict:
+        """Call Gemini API and parse JSON response"""
         try:
-            response = self.json_llm.invoke(prompt)
+            response = self.model.generate_content(prompt)
+            response_text = response.text if hasattr(response, "text") else response.candidates[0].content.parts[0].text
 
-            parsed_json = json.loads(response.content)
-            return parsed_json
+            # Extract JSON from response if wrapped in markdown
+            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            if json_match:
+                response_text = json_match.group(0)
+
+            return json.loads(response_text)
         except json.JSONDecodeError:
             raise HTTPException(status_code=500, detail="LLM did not return valid JSON")
         except Exception as e:

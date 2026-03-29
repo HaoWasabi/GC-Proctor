@@ -4,76 +4,133 @@ from services.nlp_service import NLPService
 
 
 class StudyService:
+    """CLEAN Study Service - handles RAG + LLM for study support"""
+
     def __init__(self):
         self.kb_service = KBService()
         self.nlp_service = NLPService()
 
     def process_study_workflow(self, question: str, user_info: dict, upcoming_exams: list) -> dict:
-        # RAG đọc lịch thi -> Suy luận môn thi
-        # Ép kiểu dữ liệu lịch thi thành text để đưa vào LLM suy luận (RAG on Data)
-        schedule_text = json.dumps(upcoming_exams, ensure_ascii=False)
-
-        prompt_infer_course = f"""
-        Dựa vào câu hỏi của người dùng: '{question}'
-        Và danh sách lịch thi sau: {schedule_text}
-        Hãy suy luận xem sinh viên đang muốn ôn tập môn học nào? Trả về JSON chứa: {{"courseCode": "mã môn", "courseName": "tên môn"}}. 
-        Nếu không rõ, trả về môn thi gần nhất.
         """
-        # Gọi hàm generate_json (giả sử có sẵn trong NLPService) để lấy kết quả
-        inferred_course_data = self.nlp_service.generate_json(prompt_infer_course)
+        Main workflow:
+        1. Infer course from question + schedule
+        2. Retrieve relevant materials (RAG)
+        3. Generate answer using LLM with context
+        """
 
-        course_code = inferred_course_data.get("courseCode", "")
-        course_name = inferred_course_data.get("courseName", "")
+        # STEP 1: Infer which course to study
+        schedule_text = json.dumps(upcoming_exams, ensure_ascii=False, indent=2)
+
+        inference_prompt = f"""
+        Câu hỏi: {question}
+        Lịch thi sắp tới:
+        {schedule_text}
+
+        Suy luận môn học phù hợp. Trả về JSON: {{"courseCode": "ĐS101", "courseName": "Đại số tuyến tính"}}
+        """
+
+        course_data = self.nlp_service.generate_json(inference_prompt)
+        course_code = course_data.get("courseCode", "")
+        course_name = course_data.get("courseName", "")
 
         if not course_code:
-            return {"answer": "Mình không tìm thấy thông tin môn thi nào phù hợp để ôn tập.", "citations": []}
-
-        # BƯỚC 1B: RAG tìm tài liệu môn học đó trong Knowledge Base
-        # Sử dụng hàm tìm kiếm Vector có sẵn của KBService
-        relevant_chunks = self.kb_service.retrieve_relevant_chunks(query=question, course_code=course_code)
-
-        # Xử lý: Nếu KHÔNG CÓ TÀI LIỆU
-        if not relevant_chunks:
-            fallback_answer = (
-                f"Hệ thống RAG hiện tại chưa có tài liệu nội bộ cho môn **{course_name} ({course_code})**.\n"
-                f"Mình recommend bạn truy cập hệ thống Tailieuhust để tìm tài liệu phù hợp:\n"
-                f"👉 [Tài liệu môn {course_code} trên Tailieuhust.com](https://tailieuhust.com/?s={course_code})"
-            )
             return {
-                "answer": fallback_answer,
-                "citations": [{"type": "external_link", "source": "tailieuhust.com",
-                               "ref": f"https://tailieuhust.com/?s={course_code}"}]
+                "answer": "Không thể xác định môn học bạn muốn ôn tập. Vui lòng nêu rõ tên môn.",
+                "citations": []
             }
 
-        # BƯỚC 2: CÓ TÀI LIỆU -> RAG đọc tài liệu và sinh Flashcard / Trả lời
+        # STEP 2: Retrieve materials from KB
+        relevant_chunks = self.kb_service.retrieve_relevant_chunks(question, course_code)
+
+        if not relevant_chunks:
+            return {
+                "answer": f"Hệ thống chưa có tài liệu cho môn {course_name}. Hãy upload tài liệu trước.",
+                "citations": []
+            }
+
+        # STEP 3: Generate answer with LLM + context
         context_text = "\n".join([chunk.get("content", "") for chunk in relevant_chunks])
 
         if "flashcard" in question.lower():
-            # Yêu cầu LLM sinh Flashcard từ context vừa retrieve được
-            prompt_study = f"""
-            Dựa trên TÀI LIỆU RAG SAU của môn {course_name}:
-            {context_text}
+            answer_prompt = f"""
+            Dựa trên tài liệu dưới đây của môn {course_name}, tạo 5-10 flashcard (Câu hỏi - Đáp án) 
+            để giúp sinh viên ôn tập hiệu quả:
 
-            Hãy đóng vai một gia sư, tạo một bộ Flashcard (Hỏi - Đáp) trọng tâm nhất để sinh viên luyện thi.
+            TÀI LIỆU:
+            {context_text}
             """
         else:
-            # Yêu cầu LLM recommend/giải thích lý thuyết thông thường
-            prompt_study = f"""
-            Dựa trên TÀI LIỆU RAG SAU của môn {course_name}:
+            answer_prompt = f"""
+            Trả lời câu hỏi: "{question}"
+
+            Dựa trên tài liệu của môn {course_name}:
             {context_text}
 
-            Hãy trả lời câu hỏi của sinh viên: '{question}'. Khuyên họ nên tập trung ôn phần nào dựa trên tài liệu này.
+            Trả lời đầy đủ, chi tiết và đưa ra những điểm trọng tâm cần ôn tập.
             """
 
-        # Gọi LLM (sẵn có) để sinh text cuối cùng
-        final_answer = self.nlp_service.generate_text(prompt_study)
+        final_answer = self.nlp_service.generate_text(answer_prompt)
 
-        # Gắn citation trỏ về nguồn tài liệu nội bộ đã RAG
-        citations = [{"type": "internal_rag", "source": chunk.get("source", "Tài liệu nội bộ")} for chunk in
-                     relevant_chunks]
+        # Create citations
+        citations = [
+            {
+                "type": "internal_rag",
+                "source": chunk.get("source", "Tài liệu nội bộ"),
+                "course": course_code
+            }
+            for chunk in relevant_chunks
+        ]
 
         return {
             "answer": final_answer,
-            "citations": citations
+            "citations": citations,
+            "metadata": {
+                "course_code": course_code,
+                "course_name": course_name
+            }
         }
+
+    def generate_flashcards(self, course_code: str, topic: str, num_cards: int = 10) -> dict:
+        """Standalone flashcard generator"""
+        chunks = self.kb_service.retrieve_relevant_chunks(topic, course_code)
+
+        if not chunks:
+            return {"flashcards": [], "error": "No materials found"}
+
+        context = "\n".join([c.get("content", "") for c in chunks])
+
+        prompt = f"""
+        Tạo {num_cards} flashcard về chủ đề: {topic}
+
+        Dựa trên tài liệu:
+        {context}
+
+        Format: JSON array với các object có cấu trúc {{"question": "...", "answer": "..."}}
+        """
+
+        flashcards_data = self.nlp_service.generate_json(prompt)
+        return {
+            "flashcards": flashcards_data if isinstance(flashcards_data, list) else flashcards_data.get("flashcards",
+                                                                                                        [])}
+
+    def summarize_material(self, course_code: str, length: str = "short") -> dict:
+        """Generate course summary"""
+        chunks = self.kb_service.retrieve_relevant_chunks(f"Tóm tắt {course_code}", course_code)
+
+        context = "\n".join([c.get("content", "") for c in chunks])
+
+        length_guide = {
+            "short": "100-200 từ",
+            "medium": "300-500 từ",
+            "long": "800+ từ"
+        }
+
+        prompt = f"""
+        Tóm tắt tài liệu của môn {course_code} trong {length_guide.get(length, length_guide['short'])}:
+
+        {context}
+        """
+
+        summary = self.nlp_service.generate_text(prompt)
+        return {"summary": summary, "length": length}
 
