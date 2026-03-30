@@ -1,7 +1,7 @@
 import json
 import os
 import re
-import google as genai
+import google.generativeai as genai
 from fastapi import HTTPException
 
 

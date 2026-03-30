@@ -115,3 +115,15 @@ class ExamScheduleRepository(BaseRepository):
         except Exception as e:
             logger.error(f"Error unblocking exam schedule {schedule_id}: {e}")
             return False
+
+    def get_schedules_by_student(self, student_id: str) -> List[ExamScheduleModel]:
+        try:
+            schedules: List[ExamScheduleModel] = []
+            # Truy vấn Firestore lọc theo studentId
+            docs = self.db.collection(self.collection_name).where("studentId", "==", student_id).stream()
+            for doc in docs:
+                schedules.append(ExamScheduleModel(**doc.to_dict()))
+            return schedules
+        except Exception as e:
+            logger.error(f"Error fetching schedules for student {student_id}: {e}")
+            return []
