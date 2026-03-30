@@ -16,4 +16,5 @@ class RegulationController(BaseEntityController):
             delete_method="delete_regulation",
             block_method="block_regulation",
             unblock_method="unblock_regulation",
+            answer_regulation_question_method="answer_regulation_question"
         )
