@@ -12,6 +12,7 @@ __pycache__/
 venv/
 env/
 ENV/
+configs/
 
 # ------------------------------
 # Packaging / build artifacts

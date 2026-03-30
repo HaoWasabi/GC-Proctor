@@ -13,7 +13,6 @@ from .feedback_service import FeedbackService
 from .kb_service import KBService
 from .metrics_service import MetricsService
 from .nlp_service import NLPService
-from .regulation_advanced_service import RegulationAdvancedService
 from .regulation_service import RegulationService
 from .retrieval_log_service import RetrievalLogService
 from .safety_service import SafetyService
@@ -37,7 +36,6 @@ __all__ = [
 	"KBService",
 	"MetricsService",
 	"NLPService",
-	"RegulationAdvancedService",
 	"RegulationService",
 	"RetrievalLogService",
 	"SafetyService",
