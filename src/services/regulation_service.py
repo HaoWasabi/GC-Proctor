@@ -1,7 +1,6 @@
-import os
 from typing import List
 from typing import Optional
-import google.generativeai as genai
+
 from models.regulation_model import RegulationModel
 from repositories.regulation_repository import RegulationRepository
 from repositories.document_chunk_repository import DocumentChunkRepository
@@ -13,12 +12,6 @@ class RegulationService(BaseService):
         super().__init__()
         self.regulation_repository = RegulationRepository()
         self.chunk_repository = DocumentChunkRepository()
-
-        # Cấu hình Gemini
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if api_key:
-            genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
 
     def get_regulation(self, regulation_id: str) -> Optional[RegulationModel]:
         return self.regulation_repository.get_regulation(regulation_id)

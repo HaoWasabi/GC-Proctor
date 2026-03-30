@@ -1,5 +1,3 @@
-import os
-import google.generativeai as genai
 from typing import List
 from typing import Optional
 from models.exam_model import ExamModel
@@ -13,10 +11,6 @@ class ExamService(BaseService):
         super().__init__()
         self.exam_repository = ExamRepository()
         self.schedule_repo = ExamScheduleRepository()
-
-        # Cấu hình Gemini (Nên để API KEY trong file .env)
-        genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
 
     def get_exam(self, exam_id: str) -> Optional[ExamModel]:
         return self.exam_repository.get_exam(exam_id)
