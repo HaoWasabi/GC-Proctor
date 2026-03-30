@@ -16,4 +16,5 @@ class ExamController(BaseEntityController):
             delete_method="delete_exam",
             block_method="block_exam",
             unblock_method="unblock_exam",
+            answer_exam_question_method="answer_exam_question"
         )
