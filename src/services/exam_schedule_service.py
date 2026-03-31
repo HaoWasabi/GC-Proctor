@@ -1,6 +1,5 @@
 from typing import List
 from typing import Optional
-from unittest import result
 
 from models.exam_schedule_model import ExamScheduleModel
 from repositories.exam_schedule_repository import ExamScheduleRepository
@@ -32,6 +31,25 @@ class ExamScheduleService(BaseService):
 
     def unblock_exam_schedule(self, schedule_id: str) -> bool:
         return self.exam_schedule_repository.unblock_exam_schedule(schedule_id)
+
+    def get_upcoming_exams(self, student_id: str) -> List[dict]:
+        """Return normalized exam schedule list for downstream consumers."""
+        schedules = self.exam_schedule_repository.get_schedules_by_student(student_id)
+        upcoming_exams = []
+
+        for schedule in schedules:
+            upcoming_exams.append(
+                {
+                    "examId": schedule.get_examId(),
+                    "studentId": schedule.get_studentId(),
+                    "examDate": str(schedule.get_examDate()),
+                    "startTime": str(schedule.get_startTime()),
+                    "room": schedule.get_room(),
+                    "status": schedule.get_status(),
+                }
+            )
+
+        return upcoming_exams
     
     def import_schedules_from_excel(self, file_path: str) -> str:
         return self.exam_schedule_repository.import_from_excel_batch(file_path)
