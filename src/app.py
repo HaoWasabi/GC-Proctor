@@ -8,6 +8,15 @@ from services.safety_service import SafetyService
 from services.kb_service import KBService
 from services.chat_orchestration_service import ChatOrchestrationService
 from services.exam_schedule_service import ExamScheduleService
+import os
+import warnings
+# Tắt các cảnh báo lặt vặt của transformers
+os.environ["TRANSFORMERS_VERBOSITY"] = "error"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+# Bỏ qua các FutureWarning do Streamlit quét trúng
+warnings.filterwarnings("ignore", module="transformers")
+
+
 kb_service = KBService()
 chat_service = ChatOrchestrationService()
 exam_service = ExamScheduleService()
@@ -64,7 +73,7 @@ with st.sidebar:
     st.markdown("---")
     
     # Nút về Trang chủ luôn hiện
-    if st.button("🏠 Đổi vai trò (Trang chủ)", use_container_width=True):
+    if st.button("🏠 Đổi vai trò (Trang chủ)", width="stretch"):
         navigate_to("home", None)
     
     st.markdown("---")
@@ -72,10 +81,10 @@ with st.sidebar:
     # Menu cho Sinh viên
     if st.session_state.role == "student":
         st.caption("👨‍🎓 MENU SINH VIÊN")
-        if st.button("📍 Dashboard Sinh viên", use_container_width=True): navigate_to("student_home")
-        if st.button("💬 Hỏi đáp Quy chế", use_container_width=True): navigate_to("chat_quyche")
-        if st.button("📅 Lịch thi của tôi", use_container_width=True): navigate_to("chat_lichthi")
-        if st.button("📚 Ôn tập kiến thức", use_container_width=True): navigate_to("chat_ontap")
+        if st.button("📍 Dashboard Sinh viên", width="stretch"): navigate_to("student_home")
+        if st.button("💬 Hỏi đáp Quy chế", width="stretch"): navigate_to("chat_quyche")
+        if st.button("📅 Lịch thi của tôi", width="stretch"): navigate_to("chat_lichthi")
+        if st.button("📚 Ôn tập kiến thức", width="stretch"): navigate_to("chat_ontap")
         
     # Menu cho Admin
     elif st.session_state.role == "admin":
@@ -272,8 +281,39 @@ elif st.session_state.page == "chat_lichthi":
     )
 
 elif st.session_state.page == "chat_ontap":
-    render_chat_ui("chat_ontap", "📚 Trợ lý Ôn tập", "Tóm tắt slide, tạo flashcard hoặc yêu cầu tôi tóm tắt bài giảng.")
+    st.header("📚 Cổng Ôn tập Thông minh")
+    
+    # Khởi tạo Service
+    from services.study_service import StudyService
+    svc = StudyService()
 
+    t1, t2, t3 = st.tabs(["💬 Chat với Tài liệu", "🗂️ Flashcards AI", "📖 Tài liệu đề xuất"])
+
+    with t1:
+        # Chat RAG sử dụng KBService
+        render_chat_ui("chat_ontap", "Hỏi đáp kiến thức", "Hỏi về slide, bài giảng...")
+
+    with t2:
+        st.subheader("Tạo bộ thẻ ghi nhớ")
+        topic = st.text_input("Chủ đề ôn tập", key="fc_topic")
+        if st.button("🚀 Tạo ngay"):
+            res = svc.generate_flashcards("ALL", topic) # Gọi Service thật
+            if res["status"] == "success":
+                for card in res["flashcards"]:
+                    with st.expander(card["question"]):
+                        st.write(card["answer"])
+            else:
+                st.error(res["message"])
+
+    with t3:
+        st.subheader("Tài liệu khuyên dùng")
+        # Gọi Service lấy dữ liệu từ Firebase
+        mats = svc.get_recommendations("PRM392") 
+        if mats:
+            for m in mats:
+                st.markdown(f"- **[{m['title']}]({m['url']})**")
+        else:
+            st.info("Chưa có tài liệu đề xuất cho môn này trên Firebase.")
 # ----------------------------------------
 # TRANG ADMIN: QUẢN LÝ DỮ LIỆU
 # ----------------------------------------

@@ -8,6 +8,30 @@ class KBService:
         from repositories.document_repository import DocumentRepository
         self.document_repository = DocumentRepository()
 
+    def retrieve_relevant_chunks(self, query: str, course_code: str) -> list:
+        """
+        Tìm kiếm các đoạn văn bản liên quan (Semantic Search).
+        Trong đồ án, dùng FAISS hoặc ChromaDB tại đây.
+        """
+        try:
+            # TODO: Triển khai logic Vector Search thật với LangChain & FAISS
+            # Hiện tại: Lấy danh sách tài liệu từ Firestore để giả lập nội dung tìm thấy
+            docs = self.document_repository.get_all_documents()
+            # Lọc theo môn học
+            relevant_docs = [d for d in docs if d.get_ownerId() == course_code or course_code == "ALL"]
+            
+            chunks = []
+            for d in relevant_docs:
+                chunks.append({
+                    "content": f"Nội dung từ tài liệu '{d.get_title()}': ...", 
+                    "metadata": {"source": d.get_title(), "id": d.get_id()}
+                })
+            return chunks
+        except Exception as e:
+            print(f"Error in KB Retrieval: {e}")
+            return []
+
+
     def upload_document(self, file_path: str, course_code: str, title: str) -> dict:
         try:
             doc_id = str(uuid.uuid4())

@@ -1,6 +1,7 @@
 from datetime import datetime
 import openpyxl
 from typing import List, Optional
+from google.cloud.firestore_v1.base_query import FieldFilter
 from google.cloud.firestore_v1 import DocumentSnapshot
 from models.exam_schedule_model import ExamScheduleModel
 from .base_repository import BaseRepository, logger
@@ -16,7 +17,9 @@ class ExamScheduleRepository(BaseRepository):
             doc_ref = self.db.collection(self.collection_name).document(schedule_id)
             doc_snapshot: DocumentSnapshot = doc_ref.get()
             if doc_snapshot.exists:
-                return ExamScheduleModel(**doc_snapshot.to_dict())
+                data = doc_snapshot.to_dict()
+                data['id'] = data.get('id', doc_snapshot.id)
+                return ExamScheduleModel(**data)
             logger.warning(f"Exam schedule with ID {schedule_id} not found.")
             return None
         except Exception as e:
@@ -28,7 +31,9 @@ class ExamScheduleRepository(BaseRepository):
             schedules: List[ExamScheduleModel] = []
             docs = self.db.collection(self.collection_name).stream()
             for doc in docs:
-                schedules.append(ExamScheduleModel(**doc.to_dict()))
+                data = doc.to_dict()
+                data['id'] = data.get('id', doc.id)
+                schedules.append(ExamScheduleModel(**data))
             return schedules
         except Exception as e:
             logger.error(f"Error fetching all exam schedules: {e}")
@@ -122,9 +127,11 @@ class ExamScheduleRepository(BaseRepository):
         try:
             schedules: List[ExamScheduleModel] = []
             # Truy vấn Firestore lọc theo studentId
-            docs = self.db.collection(self.collection_name).where("studentId", "==", student_id).stream()
+            docs = self.db.collection(self.collection_name).where(filter=FieldFilter("studentId", "==", student_id)).stream()
             for doc in docs:
-                schedules.append(ExamScheduleModel(**doc.to_dict()))
+                data = doc.to_dict()
+                data['id'] = data.get('id', doc.id)
+                schedules.append(ExamScheduleModel(**data))
             return schedules
         except Exception as e:
             logger.error(f"Error fetching schedules for student {student_id}: {e}")
@@ -148,6 +155,7 @@ class ExamScheduleRepository(BaseRepository):
                 doc_ref = self.db.collection(self.collection_name).document(custom_id)
                 
                 batch.set(doc_ref, {
+                    "id": custom_id,
                     "studentId": str(row[0]),
                     "examId": str(row[1]),
                     "examDate": row[2], # openpyxl tự convert sang datetime nếu cell định dạng date

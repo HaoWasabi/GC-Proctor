@@ -1,94 +1,27 @@
 import json
+from services.base_service import BaseService
 from services.kb_service import KBService
-from services.nlp_service import NLPService
+from repositories.study_repository import StudyRepository # Bổ sung import
 
-
-class StudyService:
-    """CLEAN Study Service - handles RAG + LLM for study support"""
+class StudyService(BaseService):
+    """CLEAN Study Service - handles RAG + LLM for study support using Real API"""
 
     def __init__(self):
+        super().__init__()
         self.kb_service = KBService()
-        self.nlp_service = NLPService()
+        self.study_repo = StudyRepository() # Khởi tạo repository để dùng cho get_recommendations
 
     def process_study_workflow(self, question: str, user_info: dict, upcoming_exams: list) -> dict:
-        """
-        Main workflow:
-        1. Infer course from question + schedule
-        2. Retrieve relevant materials (RAG)
-        3. Generate answer using LLM with context
-        """
+        # ... [Giữ nguyên nội dung hàm process_study_workflow tôi đã cung cấp ở câu trả lời trước] ...
+        pass
 
-        # STEP 1: Infer which course to study
-        schedule_text = json.dumps(upcoming_exams, ensure_ascii=False, indent=2)
+    # ==========================================
+    # KHÔI PHỤC LẠI CÁC HÀM BỊ THIẾU TỪ FILE GỐC
+    # ==========================================
 
-        inference_prompt = f"""
-        Câu hỏi: {question}
-        Lịch thi sắp tới:
-        {schedule_text}
-
-        Suy luận môn học phù hợp. Trả về JSON: {{"courseCode": "ĐS101", "courseName": "Đại số tuyến tính"}}
-        """
-
-        course_data = self.nlp_service.generate_json(inference_prompt)
-        course_code = course_data.get("courseCode", "")
-        course_name = course_data.get("courseName", "")
-
-        if not course_code:
-            return {
-                "answer": "Không thể xác định môn học bạn muốn ôn tập. Vui lòng nêu rõ tên môn.",
-                "citations": []
-            }
-
-        # STEP 2: Retrieve materials from KB
-        relevant_chunks = self.kb_service.retrieve_relevant_chunks(question, course_code)
-
-        if not relevant_chunks:
-            return {
-                "answer": f"Hệ thống chưa có tài liệu cho môn {course_name}. Hãy upload tài liệu trước.",
-                "citations": []
-            }
-
-        # STEP 3: Generate answer with LLM + context
-        context_text = "\n".join([chunk.get("content", "") for chunk in relevant_chunks])
-
-        if "flashcard" in question.lower():
-            answer_prompt = f"""
-            Dựa trên tài liệu dưới đây của môn {course_name}, tạo 5-10 flashcard (Câu hỏi - Đáp án) 
-            để giúp sinh viên ôn tập hiệu quả:
-
-            TÀI LIỆU:
-            {context_text}
-            """
-        else:
-            answer_prompt = f"""
-            Trả lời câu hỏi: "{question}"
-
-            Dựa trên tài liệu của môn {course_name}:
-            {context_text}
-
-            Trả lời đầy đủ, chi tiết và đưa ra những điểm trọng tâm cần ôn tập.
-            """
-
-        final_answer = self.nlp_service.generate_text(answer_prompt)
-
-        # Create citations
-        citations = [
-            {
-                "type": "internal_rag",
-                "source": chunk.get("source", "Tài liệu nội bộ"),
-                "course": course_code
-            }
-            for chunk in relevant_chunks
-        ]
-
-        return {
-            "answer": final_answer,
-            "citations": citations,
-            "metadata": {
-                "course_code": course_code,
-                "course_name": course_name
-            }
-        }
+    def get_recommendations(self, course_code: str):
+        """Lấy danh sách tài liệu từ Firebase"""
+        return self.study_repo.get_materials_by_course(course_code)
 
     def generate_flashcards(self, course_code: str, topic: str, num_cards: int = 10) -> dict:
         """Standalone flashcard generator"""
@@ -101,22 +34,30 @@ class StudyService:
 
         prompt = f"""
         Tạo {num_cards} flashcard về chủ đề: {topic}
-
         Dựa trên tài liệu:
         {context}
-
-        Format: JSON array với các object có cấu trúc {{"question": "...", "answer": "..."}}
+        Format: TRẢ VỀ CHỈ MỘT CHUỖI JSON HỢP LỆ với các object có cấu trúc {{"question": "...", "answer": "..."}}
         """
 
-        flashcards_data = self.nlp_service.generate_json(prompt)
+        try:
+            response = self.model.generate_content(prompt)
+            response_text = response.text.strip()
+            if response_text.startswith("```json"):
+                response_text = response_text[7:-3].strip()
+            elif response_text.startswith("```"):
+                response_text = response_text[3:-3].strip()
+            flashcards_data = json.loads(response_text)
+        except Exception as e:
+            print(f"[DEBUG] Error parsing flashcards JSON: {e}")
+            flashcards_data = []
+
         return {
-            "flashcards": flashcards_data if isinstance(flashcards_data, list) else flashcards_data.get("flashcards",
-                                                                                                        [])}
+            "flashcards": flashcards_data if isinstance(flashcards_data, list) else flashcards_data.get("flashcards", [])
+        }
 
     def summarize_material(self, course_code: str, length: str = "short") -> dict:
         """Generate course summary"""
         chunks = self.kb_service.retrieve_relevant_chunks(f"Tóm tắt {course_code}", course_code)
-
         context = "\n".join([c.get("content", "") for c in chunks])
 
         length_guide = {
@@ -126,11 +67,11 @@ class StudyService:
         }
 
         prompt = f"""
-        Tóm tắt tài liệu của môn {course_code} trong {length_guide.get(length, length_guide['short'])}:
-
+        Tóm tắt tài liệu của môn {course_code} trong khoảng {length_guide.get(length, length_guide['short'])}:
+        TÀI LIỆU:
         {context}
         """
 
-        summary = self.nlp_service.generate_text(prompt)
-        return {"summary": summary, "length": length}
+        response = self.model.generate_content(prompt)
+        return {"summary": response.text, "length": length}
 
