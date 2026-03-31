@@ -18,11 +18,16 @@ class NLPService:
         """Extract intent from user question - SIMPLIFIED"""
         question_lower = question.lower()
 
+        # Help request keywords
+        help_keywords = ["cách dùng", "hướng dẫn", "làm sao", "hỏi", "giúp", "trợ giúp", "hệ thống hoạt động", "có gì mới", "tính năng", "support"]
+        
         study_keywords = ["ôn tập", "tài liệu", "đề thi", "flashcard", "giải thích", "tóm tắt", "học bài"]
         if "lịch thi" in question_lower or "phòng thi" in question_lower:
             intent = "exam_schedule"
         elif "quy chế" in question_lower or "điều lệ" in question_lower:
             intent = "regulation"
+        elif any(kw in question_lower for kw in help_keywords):
+            intent = "help_request"
         elif any(kw in question_lower for kw in study_keywords):
             intent = "study_support"
         else:
