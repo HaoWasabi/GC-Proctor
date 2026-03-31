@@ -16,4 +16,6 @@ class FeedbackController(BaseEntityController):
             delete_method="delete_feedback",
             block_method="block_feedback",
             unblock_method="unblock_feedback",
+            get_feedback_by_message_id_method="get_feedback_by_message_id",
+            submit_feedback_method="submit_feedback",
         )

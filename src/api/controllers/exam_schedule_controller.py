@@ -16,4 +16,5 @@ class ExamScheduleController(BaseEntityController):
             delete_method="delete_exam_schedule",
             block_method="block_exam_schedule",
             unblock_method="unblock_exam_schedule",
+            import_schedules_from_excel_method="import_schedules_from_excel",
         )
