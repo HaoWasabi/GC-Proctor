@@ -3,6 +3,7 @@ import time
 import pandas as pd
 import base64
 from services.regulation_service import RegulationService
+from services.exam_service import ExamService
 from services.safety_service import SafetyService
 from services.kb_service import KBService
 from services.chat_orchestration_service import ChatOrchestrationService
@@ -23,11 +24,13 @@ def get_services():
     """Khởi tạo services dùng chung (singleton)"""
     return {
         "regulation_service": RegulationService(),
+        "exam_service": ExamService(),
         "safety_service": SafetyService()
     }
 
 services = get_services()
 reg_service = services["regulation_service"]
+exam_service = services["exam_service"]
 
 # Khởi tạo các biến trạng thái (Session State) để lưu lịch sử và điều hướng
 if "page" not in st.session_state:
@@ -42,6 +45,10 @@ if "chat_lichthi" not in st.session_state:
     st.session_state.chat_lichthi = [{"role": "assistant", "content": "Dưới đây là lịch thi của bạn. Bạn có thắc mắc gì về phòng máy, giờ thi hay môn thi không?"}]
 if "chat_ontap" not in st.session_state:
     st.session_state.chat_ontap = [{"role": "assistant", "content": "Sẵn sàng ôn tập! Gửi cho tôi slide bài giảng hoặc chủ đề bạn muốn luyện tập."}]
+
+# Khởi tạo student_id cho session (dùng cho tra cứu lịch thi)
+if "student_id" not in st.session_state:
+    st.session_state.student_id = None
 
 # Hàm điều hướng trang
 def navigate_to(page_name, role=None):
@@ -79,7 +86,7 @@ with st.sidebar:
 # ----------------------------------------
 # TRANG CHAT (HÀM DÙNG CHUNG ĐỂ RENDER UI CHAT)
 # ----------------------------------------
-def render_chat_ui(chat_history_key, title, subtitle, is_rag=False):
+def render_chat_ui(chat_history_key, title, subtitle, is_rag=False, is_exam_lookup=False):
     st.header(title)
     st.caption(subtitle)
     
@@ -132,6 +139,29 @@ def render_chat_ui(chat_history_key, title, subtitle, is_rag=False):
                 # Hiển thị link trích dẫn
                 for link in relevant_links:
                     st.caption(f"🔗 [Nguồn: {link['title']}]({link['url']})")
+
+            elif is_exam_lookup:
+                # GỌI BACKEND THẬT CHO LỊCH THI
+                student_id = st.session_state.get("student_id")
+                if not student_id:
+                    st.error("⚠️ Vui lòng nhập Mã số sinh viên ở phía trên trước khi hỏi về lịch thi.")
+                    return
+                
+                with st.spinner("Đang tra cứu lịch thi..."):
+                    ai_response = exam_service.answer_exam_question(student_id, prompt)
+
+                # Hiệu ứng gõ chữ
+                full_response = ""
+                for chunk in ai_response.split():
+                    full_response += chunk + " "
+                    time.sleep(0.02)
+                    message_placeholder.markdown(full_response + "▌")
+                message_placeholder.markdown(full_response)
+
+                st.session_state[chat_history_key].append({
+                    "role": "assistant",
+                    "content": full_response
+                })
             
             else:
                 # Giả lập cho các luồng khác chưa tích hợp RAG
@@ -205,14 +235,41 @@ elif st.session_state.page == "chat_quyche":
 
 elif st.session_state.page == "chat_lichthi":
     st.header("📅 Lịch thi & Trợ lý Khảo thí")
-    st.markdown("##### Bảng lịch thi sắp tới của bạn:")
+    
+    # Input student_id
+    st.info("ℹ️ Vui lòng nhập Mã số sinh viên của bạn để tra cứu lịch thi cá nhân:")
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        new_student_id = st.text_input(
+            "Mã số sinh viên (VD: SE160001, SV001)",
+            value=st.session_state.get("student_id", ""),
+            placeholder="Nhập mã SV của bạn",
+            key="student_id_input"
+        )
+        if new_student_id and new_student_id != st.session_state.get("student_id"):
+            st.session_state.student_id = new_student_id
+    
+    with col2:
+        if st.button("🔄 Cập nhật", use_container_width=True):
+            st.rerun()
+    
+    st.divider()
+    
+    # Tạm hiển thị bảng dữ liệu mẫu
+    st.markdown("##### Bảng lịch thi sắp tới:")
     df_exams = pd.DataFrame([
         {"Môn thi": "PRM392", "Ngày thi": "15/05/2026", "Giờ thi": "07:30 AM", "Phòng": "P.202 Alpha", "Hình thức": "Thực hành (PE)"},
         {"Môn thi": "SWE201", "Ngày thi": "18/05/2026", "Giờ thi": "09:45 AM", "Phòng": "P.101 Beta", "Hình thức": "Lý thuyết (FE)"},
     ])
     st.dataframe(df_exams, use_container_width=True, hide_index=True)
     st.divider()
-    render_chat_ui("chat_lichthi", "🤖 Hỏi đáp lịch thi", "Bạn có thắc mắc gì về danh sách môn thi ở trên không?")
+    
+    render_chat_ui(
+        "chat_lichthi",
+        "🤖 Hỏi đáp lịch thi",
+        "Bạn có thắc mắc gì về danh sách môn thi ở trên không?",
+        is_exam_lookup=True,
+    )
 
 elif st.session_state.page == "chat_ontap":
     render_chat_ui("chat_ontap", "📚 Trợ lý Ôn tập", "Tóm tắt slide, tạo flashcard hoặc yêu cầu tôi tóm tắt bài giảng.")

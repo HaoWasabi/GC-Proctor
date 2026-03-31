@@ -26,7 +26,37 @@ class DocumentChunkRepository(BaseRepository):
             chunks: List[DocumentChunkModel] = []
             docs = self.db.collection(self.collection_name).stream()
             for doc in docs:
-                chunks.append(DocumentChunkModel(**doc.to_dict()))
+                data = doc.to_dict() or {}
+
+                # Support mixed schema and skip malformed docs instead of failing entire retrieval.
+                normalized = {
+                    "id": data.get("id") or doc.id,
+                    "documentId": data.get("documentId") or data.get("document_id") or "",
+                    "chunkIndex": data.get("chunkIndex") if data.get("chunkIndex") is not None else data.get("chunk_index", 0),
+                    "content": data.get("content") or "",
+                    "embeddingId": data.get("embeddingId") or data.get("embedding_id") or "",
+                    "scoreThreshold": data.get("scoreThreshold") if data.get("scoreThreshold") is not None else data.get("score_threshold", 0.0),
+                    "createdAt": data.get("createdAt") or data.get("created_at"),
+                    "isActive": data.get("isActive", True),
+                }
+
+                # Minimum required fields to be useful for retrieval.
+                if not normalized["documentId"] or not normalized["content"] or not normalized["createdAt"]:
+                    logger.warning(
+                        "Skip malformed chunk doc id=%s keys=%s",
+                        doc.id,
+                        sorted(list(data.keys())),
+                    )
+                    continue
+
+                try:
+                    chunks.append(DocumentChunkModel(**normalized))
+                except Exception as parse_err:
+                    logger.warning(
+                        "Skip invalid chunk doc id=%s parse_error=%s",
+                        doc.id,
+                        parse_err,
+                    )
             return chunks
         except Exception as e:
             logger.error(f"Error fetching all document chunks: {e}")

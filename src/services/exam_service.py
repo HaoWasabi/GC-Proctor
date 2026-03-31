@@ -36,14 +36,23 @@ class ExamService(BaseService):
     def _get_raw_exam_data(self, student_id: str) -> str:
             """Truy vấn dữ liệu từ Firestore và chuyển thành văn bản ngữ cảnh"""
             schedules = self.schedule_repo.get_schedules_by_student(student_id)
+            print(f"[DEBUG] Querying schedules for student_id='{student_id}', found={len(schedules) if schedules else 0}")
+            
             if not schedules:
+                # Fallback: Log tất cả studentIds có trong DB để debug
+                all_schedules = self.schedule_repo.get_all_exam_schedules()
+                if all_schedules:
+                    existing_student_ids = set([s.get_studentId() for s in all_schedules])
+                    print(f"[DEBUG] No schedules found for {student_id}. Existing StudentIds in DB: {existing_student_ids}")
+                    return f"Không tìm thấy lịch thi cho mã sinh viên '{student_id}'. Mã sinh viên có trong hệ thống: {', '.join(sorted(existing_student_ids))}"
+                
                 return "Không tìm thấy lịch thi."
 
             context_parts = []
             for s in schedules:
                 exam = self.exam_repository.get_exam(s.get_examId())
                 course_info = exam.get_courseId() if exam else "Môn học"
-                info = f"- Môn: {course_info}, Ngày: {s.get_examDate()}, Phòng: {s.get_room()}, Giờ: {s.get_startTime()}"
+                info = f"- Môn: {course_info}, Ngày: {s.get_examDate()}, Phòng: {s.get_room()}, Giờ: {s.get_startTime()}, Trạng thái: {s.get_status()}"
                 context_parts.append(info)
                 
             return "\n".join(context_parts)

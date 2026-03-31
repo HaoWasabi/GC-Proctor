@@ -1,8 +1,10 @@
 from services.nlp_service import NLPService
 from services.study_service import StudyService
 from services.user_service import UserService
+from services.exam_service import ExamService
 from services.exam_schedule_service import ExamScheduleService
 from services.help_request_service import HelpRequestService
+from services.regulation_service import RegulationService
 
 
 class ChatOrchestrationService:
@@ -12,7 +14,9 @@ class ChatOrchestrationService:
         self.nlp_service = NLPService()
         self.study_service = StudyService()
         self.user_service = UserService()
+        self.exam_service = ExamService()
         self.exam_schedule_service = ExamScheduleService()
+        self.regulation_service = RegulationService()
         self.help_request_service = HelpRequestService()
 
     def ask(self, payload: dict, authorization: str = None) -> dict:
@@ -35,6 +39,22 @@ class ChatOrchestrationService:
                 "channel": result.get("channel"),
                 "botResponse": result.get("botResponse"),
                 "timestamp": result.get("timestamp")
+            }
+
+        elif intent == "exam_schedule":
+            answer = self.exam_service.answer_exam_question(user_id, question)
+            return {
+                "intent": "exam_schedule",
+                "answer": {"text": answer},
+                "citations": [],
+            }
+
+        elif intent == "regulation":
+            answer = self.regulation_service.answer_regulation_question(question)
+            return {
+                "intent": "regulation",
+                "answer": {"text": answer},
+                "citations": [],
             }
         
         elif intent == "study_support":
