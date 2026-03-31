@@ -3,7 +3,6 @@ from google.cloud.firestore_v1 import DocumentSnapshot
 from models.document_model import DocumentModel
 from .base_repository import BaseRepository, logger
 
-
 class DocumentRepository(BaseRepository):
     def __init__(self):
         super().__init__()
@@ -14,7 +13,9 @@ class DocumentRepository(BaseRepository):
             doc_ref = self.db.collection(self.collection_name).document(document_id)
             doc_snapshot: DocumentSnapshot = doc_ref.get()
             if doc_snapshot.exists:
-                return DocumentModel(**doc_snapshot.to_dict())
+                data = doc_snapshot.to_dict()
+                data['id'] = data.get('id', doc_snapshot.id) # VÁ LỖI THIẾU ID
+                return DocumentModel(**data)
             logger.warning(f"Document with ID {document_id} not found.")
             return None
         except Exception as e:
@@ -26,7 +27,9 @@ class DocumentRepository(BaseRepository):
             documents: List[DocumentModel] = []
             docs = self.db.collection(self.collection_name).stream()
             for doc in docs:
-                documents.append(DocumentModel(**doc.to_dict()))
+                data = doc.to_dict()
+                data['id'] = data.get('id', doc.id) # VÁ LỖI THIẾU ID
+                documents.append(DocumentModel(**data))
             return documents
         except Exception as e:
             logger.error(f"Error fetching all documents: {e}")

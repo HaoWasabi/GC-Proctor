@@ -28,7 +28,8 @@ class StudyService(BaseService):
         chunks = self.kb_service.retrieve_relevant_chunks(topic, course_code)
 
         if not chunks:
-            return {"flashcards": [], "error": "No materials found"}
+            # SỬA Ở ĐÂY: Thêm status và message
+            return {"status": "error", "flashcards": [], "message": "Không tìm thấy tài liệu phù hợp để tạo flashcards."}
 
         context = "\n".join([c.get("content", "") for c in chunks])
 
@@ -47,13 +48,24 @@ class StudyService(BaseService):
             elif response_text.startswith("```"):
                 response_text = response_text[3:-3].strip()
             flashcards_data = json.loads(response_text)
+            
+            # Đảm bảo flashcards_data là một list
+            final_cards = flashcards_data if isinstance(flashcards_data, list) else flashcards_data.get("flashcards", [])
+            
+            # SỬA Ở ĐÂY: Trả về trạng thái thành công
+            return {
+                "status": "success",
+                "flashcards": final_cards
+            }
+            
         except Exception as e:
             print(f"[DEBUG] Error parsing flashcards JSON: {e}")
-            flashcards_data = []
-
-        return {
-            "flashcards": flashcards_data if isinstance(flashcards_data, list) else flashcards_data.get("flashcards", [])
-        }
+            # SỬA Ở ĐÂY: Trả về trạng thái lỗi nếu quá trình AI parse gặp sự cố
+            return {
+                "status": "error",
+                "flashcards": [],
+                "message": f"Lỗi trong quá trình tạo flashcards từ AI."
+            }
 
     def summarize_material(self, course_code: str, length: str = "short") -> dict:
         """Generate course summary"""
