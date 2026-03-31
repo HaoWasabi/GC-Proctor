@@ -23,3 +23,6 @@ class BaseRepository:
 
             firebase_admin.initialize_app(cred)
         self.db = firestore.client()
+
+    def get_batch(self):
+        return self.db.batch()

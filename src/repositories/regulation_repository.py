@@ -1,3 +1,5 @@
+import openpyxl
+from datetime import datetime
 from typing import List, Optional
 from google.cloud.firestore_v1 import DocumentSnapshot
 from models.regulation_model import RegulationModel
@@ -113,3 +115,49 @@ class RegulationRepository(BaseRepository):
         except Exception as e:
             logger.error(f"Error unblocking regulation {regulation_id}: {e}")
             return False
+
+    def import_from_excel_batch(self, file_path: str):
+        try:
+            wb = openpyxl.load_workbook(file_path)
+            sheet = wb.active  # Hoặc wb["Tên_Sheet"]
+            
+            batch = self.get_batch()
+            count = 0
+
+            # Giả sử: A: ID, B: Code, C: Title, D: Version, E: Date, F: URL
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                if not row[1]: continue # Bỏ qua dòng trống
+                
+                reg_id = str(row[0]) if row[0] else None
+                new_reg = RegulationModel(
+                    id=reg_id,
+                    regulationCode=str(row[1]),
+                    title=str(row[2]),
+                    version=str(row[3]),
+                    effectiveDate=str(row[4] if isinstance(row[4], datetime) else datetime.now()),
+                    sourceUrl=str(row[5]),
+                    updatedAt=str(datetime.now())
+                )
+                
+                # Tạo document reference
+                doc_ref = self.db.collection(self.collection_name).document(reg_id or new_reg.get_regulationCode())
+                batch.set(doc_ref, {
+                    "regulationCode": new_reg.get_regulationCode(),
+                    "title": new_reg.get_title(),
+                    "version": new_reg.get_version(),
+                    "effectiveDate": new_reg.get_effectiveDate(),
+                    "sourceUrl": new_reg.get_sourceUrl(),
+                    "updatedAt": new_reg.get_updatedAt(),
+                    "isActive": True
+                })
+                
+                count += 1
+                if count % 500 == 0: # Firestore giới hạn 500 thao tác mỗi batch
+                    batch.commit()
+                    batch = self.get_batch()
+
+            batch.commit()
+            return {"success": 1, "failed": 0, "errors": []}
+        except Exception as e:
+            logger.error(f"Error importing regulations from Excel: {e}")
+            return {"success": 0, "failed": 0, "errors": [str(e)]}

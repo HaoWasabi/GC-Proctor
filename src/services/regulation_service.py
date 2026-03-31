@@ -84,3 +84,6 @@ class RegulationService(BaseService):
             return response.text
         except Exception as e:
             return f"Lỗi kết nối AI: {str(e)}"
+
+    def import_from_excel_batch(self, file_path: str):
+        return self.regulation_repository.import_from_excel_batch(file_path)

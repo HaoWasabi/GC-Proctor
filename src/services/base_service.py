@@ -47,3 +47,4 @@ class BaseService(object):
             return preferred_model
 
         return fallback_candidates[0]
+    

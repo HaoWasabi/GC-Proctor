@@ -1,3 +1,5 @@
+from datetime import datetime
+import openpyxl
 from typing import List, Optional
 from google.cloud.firestore_v1 import DocumentSnapshot
 from models.exam_schedule_model import ExamScheduleModel
@@ -127,3 +129,42 @@ class ExamScheduleRepository(BaseRepository):
         except Exception as e:
             logger.error(f"Error fetching schedules for student {student_id}: {e}")
             return []
+            
+    def import_schedules_from_excel(self, file_path: str):
+        try:
+            wb = openpyxl.load_workbook(file_path)
+            sheet = wb.active
+            
+            batch = self.get_batch()
+            count = 0
+
+            # Cấu trúc file Excel giả định: 
+            # A: StudentID, B: ExamID, C: Date, D: Time, E: Room
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                if not row[0]: continue
+                
+                # Tạo ID duy nhất để tránh trùng lặp: studentId_examId
+                custom_id = f"{row[0]}_{row[1]}"
+                doc_ref = self.db.collection(self.collection_name).document(custom_id)
+                
+                batch.set(doc_ref, {
+                    "studentId": str(row[0]),
+                    "examId": str(row[1]),
+                    "examDate": row[2], # openpyxl tự convert sang datetime nếu cell định dạng date
+                    "startTime": str(row[3]),
+                    "room": str(row[4]),
+                    "status": "scheduled",
+                    "updatedAt": str(datetime.now()),
+                    "isActive": True
+                })
+                
+                count += 1
+                if count % 500 == 0:
+                    batch.commit()
+                    batch = self.get_batch()
+
+            batch.commit()
+            return {"success": 1, "failed": 0, "errors": []}
+        except Exception as e:
+            logger.error(f"Error importing exam schedules from Excel: {e}")
+            return {"success": 0, "failed": 0, "errors": [str(e)]}
