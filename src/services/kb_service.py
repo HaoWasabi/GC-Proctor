@@ -1,26 +1,33 @@
+from datetime import datetime  # Dùng datetime thay vì date
+import uuid
+from models.document_model import DocumentModel
+
+
 class KBService:
-    """Simplified Knowledge Base Service - handles RAG retrieval"""
-
     def __init__(self):
-        # Initialize vector DB connection (e.g., Pinecone, Weaviate, etc.)
-        pass
-
-    def retrieve_relevant_chunks(self, query: str, course_code: str) -> list:
-        """
-        Retrieve relevant document chunks from vector database
-        - Uses semantic search with query embedding
-        - Filters by course_code if provided
-        """
-        try:
-            # TODO: Implement vector similarity search
-            # Example: query.embed() -> search in vector DB -> return chunks
-            chunks = []  # Replace with actual retrieval
-            return chunks
-        except Exception as e:
-            return []
+        from repositories.document_repository import DocumentRepository
+        self.document_repository = DocumentRepository()
 
     def upload_document(self, file_path: str, course_code: str, title: str) -> dict:
-        """Upload and chunk document for RAG"""
-        # TODO: Implementation for document upload
-        return {"documentId": "doc_001", "status": "uploaded"}
+        try:
+            doc_id = str(uuid.uuid4())
+            new_doc = DocumentModel(
+                id=doc_id,
+                docType="regulation",
+                title=title,
+                ownerType="course",
+                ownerId=course_code,
+                storagePath=file_path,
+                language="vi",
+                createdAt=datetime.now(), 
+                isActive=True
+            )
 
+            result_id = self.document_repository.create_document(new_doc)
+
+            if result_id:
+                return {"documentId": result_id, "status": "success"}
+            else:
+                return {"status": "error", "message": "Failed to save to Firebase. Check console logs."}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}

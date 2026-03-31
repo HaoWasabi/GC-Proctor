@@ -1,9 +1,15 @@
 import streamlit as st
 import time
 import pandas as pd
+import base64
 from services.regulation_service import RegulationService
 from services.safety_service import SafetyService
-
+from services.kb_service import KBService
+from services.chat_orchestration_service import ChatOrchestrationService
+from services.exam_schedule_service import ExamScheduleService
+kb_service = KBService()
+chat_service = ChatOrchestrationService()
+exam_service = ExamScheduleService()
 # ==========================================
 # 1. CẤU HÌNH & KHỞI TẠO STATE
 # ==========================================
@@ -216,37 +222,37 @@ elif st.session_state.page == "chat_ontap":
 # ----------------------------------------
 elif st.session_state.page == "admin_home":
     st.header("⚙️ Quản trị Hệ thống GC-Proctor")
-    st.markdown("Quản lý nguồn dữ liệu (Knowledge Base) cho AI RAG và cơ sở dữ liệu hệ thống.")
-    
-    tab1, tab2, tab3 = st.tabs(["📤 Import Dữ liệu (Upload)", "📖 Quản lý Quy chế (Tài liệu)", "📅 Quản lý Lịch thi"])
-    
+
+    tab1, tab2 = st.tabs(["📚 Upload Quy chế (Knowledge Base)", "📅 Quản lý Lịch thi"])
+
     with tab1:
-        st.subheader("Import file Quy chế / Lịch thi")
-        uploaded_file = st.file_uploader("Chọn file PDF, DOCX hoặc CSV", type=["pdf", "docx", "csv"])
-        if uploaded_file is not None:
-            doc_type = st.radio("Loại tài liệu này là gì?", ["Quy chế / Hướng dẫn", "Danh sách Lịch thi sinh viên"])
-            if st.button("🚀 Upload và Xử lý (Embedding)"):
-                with st.spinner("Đang đẩy file xuống backend xử lý Vector DB..."):
-                    time.sleep(2) 
-                st.success(f"Đã import thành công file: {uploaded_file.name} vào hệ thống!")
+        st.subheader("Upload Tài liệu Quy chế")
 
-    with tab2:
-        st.subheader("Danh sách Tài liệu / Quy chế hiện có")
-        regs = reg_service.get_all_regulations()
-        data = [{"ID": r.get_id(), "Tên tài liệu": r.get_title(), "Phiên bản": r.get_version(), "Ngày hiệu lực": r.get_effectiveDate()} for r in regs]
-        if not data:
-            data = [{"ID": "N/A", "Tên tài liệu": "Chưa có dữ liệu", "Phiên bản": "-", "Ngày hiệu lực": "-"}]
-        
-        edited_df = st.data_editor(pd.DataFrame(data), num_rows="dynamic", use_container_width=True)
-        if st.button("💾 Lưu thay đổi Tài liệu"):
-            st.toast("Đã lưu cập nhật quy chế xuống Database!", icon="✅")
+        uploaded_doc = st.file_uploader("Chọn file PDF hoặc DOCX", type=["pdf", "docx"])
+        doc_title = st.text_input("Tên tài liệu", placeholder="VD: Quy chế thi cử 2024")
 
-    with tab3:
-        st.subheader("Cơ sở dữ liệu Lịch thi toàn trường")
-        df_schedules = pd.DataFrame([
-            {"Mã SV": "SE160001", "Môn": "PRM392", "Ngày": "15/05", "Giờ": "07:30", "Phòng": "202 Alpha"},
-            {"Mã SV": "SE160001", "Môn": "SWE201", "Ngày": "18/05", "Giờ": "09:45", "Phòng": "101 Beta"},
-        ])
-        edited_schedules = st.data_editor(df_schedules, num_rows="dynamic", use_container_width=True)
-        if st.button("💾 Lưu thay đổi Lịch thi"):
-            st.toast("Đã cập nhật lịch thi thành công!", icon="✅")
+        # BỔ SUNG: Thêm ô nhập Course Code vì KBService yêu cầu
+        course_code = st.text_input("Mã môn học (Course Code)", placeholder="VD: ALL (nếu dùng chung) hoặc PRM392")
+
+        if st.button("🚀 Upload lên Vector DB", type="primary"):
+            if uploaded_doc and doc_title and course_code:
+                with st.spinner("Đang xử lý qua KBService..."):
+                    try:
+                        # 1. Mã hóa file sang Base64
+                        file_bytes = uploaded_doc.getvalue()
+                        encoded_file = base64.b64encode(file_bytes).decode('utf-8')
+
+                        # 2. GỌI TRỰC TIẾP SERVICE VỚI ĐỦ 3 THAM SỐ
+                        data = kb_service.upload_document(
+                            file_path=encoded_file,
+                            course_code=course_code,
+                            title=doc_title
+                        )
+
+                        st.success(f"✅ Đã gửi yêu cầu xử lý tài liệu: {doc_title}")
+                        st.json(data)  # Hiển thị kết quả trả về từ service
+
+                    except Exception as e:
+                        st.error(f"⚠️ Lỗi xử lý Service: {e}")
+            else:
+                st.warning("Vui lòng điền đầy đủ: File, Tên tài liệu và Mã môn học.")
