@@ -31,3 +31,12 @@ class FeedbackService(BaseService):
 
     def unblock_feedback(self, feedback_id: str) -> bool:
         return self.feedback_repository.unblock_feedback(feedback_id)
+    
+    def get_feedback_by_message_id(self, message_id: str) -> Optional[FeedbackModel]:
+        return self.feedback_repository.get_feedback_by_message_id(message_id)
+    
+    def submit_feedback(self, feedback: FeedbackModel) -> Optional[str]:
+        # Bạn có thể thêm logic kiểm tra rating ở đây (ví dụ: 1-5)
+        if not (1 <= feedback.get_rating() <= 5):
+            return None
+        return self.feedback_repository.create_feedback(feedback)

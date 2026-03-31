@@ -111,3 +111,14 @@ class FeedbackRepository(BaseRepository):
         except Exception as e:
             logger.error(f"Error unblocking feedback {feedback_id}: {e}")
             return False
+
+    def get_feedback_by_message(self, message_id: str) -> List[FeedbackModel]:
+            try:
+                feedbacks = []
+                docs = self.db.collection(self.collection_name).where("messageId", "==", message_id).stream()
+                for doc in docs:
+                    feedbacks.append(FeedbackModel(**doc.to_dict()))
+                return feedbacks
+            except Exception as e:
+                logger.error(f"Error fetching feedback for message {message_id}: {e}")
+                return []
