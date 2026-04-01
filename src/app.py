@@ -154,8 +154,7 @@ def render_chat_ui(chat_history_key, title, subtitle, is_rag=False, is_exam_look
                         st.stop()
                     
                     with st.spinner("Đang tra cứu lịch thi..."):
-                        ai_response = exam_schedule_svc.answer_exam_question(student_id, prompt)
-
+                        ai_response = exam_service.answer_exam_question(student_id, prompt)
                     full_response = ""
                     for chunk in ai_response.split():
                         full_response += chunk + " "
