@@ -49,28 +49,37 @@ class KBService:
         return chunks
 
     def retrieve_relevant_chunks(self, query: str, course_code: str) -> list:
-        """Thực hiện Vector Search thật sự với FAISS"""
+        """Thực hiện Vector Search thật sự với FAISS - Đã fix lỗi lẫn Quy chế"""
         try:
             if self.vector_store.index is None:
                 self.vector_store.load_faiss_index()
                 
-            # Lấy danh sách Document ID hợp lệ theo môn học
+            # ==========================================
+            # 1. TẠO BỘ LỌC CHẶT CHẼ THEO OWNER TYPE
+            # ==========================================
             valid_doc_ids = set()
             docs = self.document_repository.get_all_documents()
-            for d in docs:
-                if d.get_ownerId() == course_code.upper():
-                    valid_doc_ids.add(d.get_id())
             
-            # Vector Search (Lấy ra 15 kết quả giống nhất đề phòng bị lọc)
+            for d in docs:
+                # KIỂM TRA LỚP 1: Bắt buộc phải là tài liệu môn học/bài giảng (Tuyệt đối không lấy regulation)
+                if d.get_ownerType() == "course" or d.get_docType() == "study_material":
+                    
+                    # KIỂM TRA LỚP 2: Lọc theo mã môn
+                    if course_code == "ALL" or d.get_ownerId() == course_code.upper():
+                        valid_doc_ids.add(d.get_id())
+            
+            # ==========================================
+            # 2. TÌM KIẾM VECTOR & ÉP VÀO KHUÔN LỌC
+            # ==========================================
+            # Lấy ra 15 kết quả giống nhất đề phòng bị lọc bớt
             raw_results = self.vector_store.search_with_citations(query, k=15)
             
             chunks = []
             for res in raw_results:
                 doc_id = res['citation'].get('documentId')
                 
-                # Bỏ qua nếu document không thuộc môn học này
-                # (Chỉ lọc nếu valid_doc_ids có dữ liệu, tránh trường hợp DB lỗi làm mất hết kết quả)
-                if course_code != "ALL" and len(valid_doc_ids) > 0 and doc_id not in valid_doc_ids:
+                # NẾU DOCUMENT ĐÓ KHÔNG NẰM TRONG DANH SÁCH HỢP LỆ -> BỎ QUA NGAY
+                if doc_id not in valid_doc_ids:
                     continue
                     
                 chunks.append({
@@ -78,6 +87,7 @@ class KBService:
                     "metadata": res['citation']
                 })
                 
+                # Chỉ lấy 5 đoạn tốt nhất mang đi trả lời
                 if len(chunks) >= 5:
                     break
                     

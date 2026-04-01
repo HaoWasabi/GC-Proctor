@@ -2,6 +2,156 @@
   "fingerprint": "manual_build",
   "entries": [
     {
+      "id": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_0",
+      "text": "Thuật Toán \n(Algorithm) \nTrịnh Tấn Đạt  \nKhoa CNTT  - Đại Học Sài Gòn \nEmail: trinhtandat@sgu.edu.vn \nWebsite: https://sites.google.com/site/ttdat88/ \n \n \n\nNội dung \n\nVấn đề, bài toán \n\nThuật toán \no Khái niệm  \no Các đặc trưng của thuật toán \no Phương pháp biểu diễn thuật toán : mã giả, lưu đồ khối. \n\nGiải bài toán trên máy tính \n\nVấn đề, bài toán \n\nVấn đề (issue/problem):  \no\nNhững vướng mắc, khó khăn trong cuộc sống mà ta cần giải quyết \n\nBài toán (problem): \no\nMột loại vấn đề mà để giải quyết, cần đến tính toán (phép toán số, luận lí, quan \nhệ). \no\nKhi giải bài toán, cần quan tâm 02 yếu tố: đầu vào (input) và đầu ra (output) \n \n\nGiải quyết vấn đề, bài toán \nBất kỳ vấn đề, bài toán ngoài đời nào cũng có thể được chia thành trình tự nhiều \ncông việc nhỏ hơn. \nTrình tự các công việc nhỏ này được gọi là giải thuật giải quyết công việc ngoài \nđời. \nMỗi công việc nhỏ hơn cũng có thể được chia nhỏ hơn nữa nếu nó còn phức tạp,... \n \n \nVí dụ: ??? \nVấn đề mấu chốt của việc dùng máy ",
+      "citation": {
+        "chunkId": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_0",
+        "documentId": "070e2ab6-e112-4ac0-b298-57f58285d008",
+        "chunkIndex": 0,
+        "quote": "Thuật Toán \n(Algorithm) \nTrịnh Tấn Đạt  \nKhoa CNTT  - Đại Học Sài Gòn \nEmail: trinhtandat@sgu.edu.vn"
+      }
+    },
+    {
+      "id": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_1",
+      "text": "c nhỏ này được gọi là giải thuật giải quyết công việc ngoài \nđời. \nMỗi công việc nhỏ hơn cũng có thể được chia nhỏ hơn nữa nếu nó còn phức tạp,... \n \n \nVí dụ: ??? \nVấn đề mấu chốt của việc dùng máy tính giải quyết công việc ngoài đời là lập \ntrình. \n\nThuật toán \nThuật toán (Algorithm):  \nLà cách biểu diễn lời giải \"bài toán“ rõ ràng (không mập mờ), chi tiết để có thể \nthực thi được trên máy tính. \nLà một dãy hữu hạn các bước nhằm xác định các thao tác mà máy tính có thể thực \nhiện được sao cho sau khoảng thời gian hữu hạn (có tính dừng) thì cho ra kết \nquả. \nVí dụ: Bài toán giải phương trình bậc 1 (1 ẩn ;  ax + b = 0). \n\nVí dụ: \nThuật toán giải PT bậc nhất: ax + b = 0 \n \n(a, b là các số thực). \n \n• Nếu a = 0 \n• b = 0 thì phương trình có nghiệm bất kì. \n• b ≠ 0 thì phương trình vô nghiệm. \n• Nếu a ≠ 0 \n• Phương trình có nghiệm duy nhất x = -b/a \nĐầu vào: a, b thuộc R \nĐầu ra: nghiệm phương trình ax + b = 0 \n\nCác đặc trưng của thuật toán \nTính hữu hạn: có hữu hạn bước và phải dừng.",
+      "citation": {
+        "chunkId": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_1",
+        "documentId": "070e2ab6-e112-4ac0-b298-57f58285d008",
+        "chunkIndex": 1,
+        "quote": "c nhỏ này được gọi là giải thuật giải quyết công việc ngoài \nđời. \nMỗi công việc nhỏ hơn cũng có th"
+      }
+    },
+    {
+      "id": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_10",
+      "text": " khác nhau để giải bài toán. \nCác phương pháp có thể khác nhau về thời gian thực hiện, chi phí lưu trữ dữ liệu, độ \nchính xác, … => tùy theo nhu cầu cụ thể mà chọn phương pháp giải thích hợp. \n\nGiải bài toán trên máy tính \n 3) Xây dựng thuật toán: xây dựng mô hình chặt chẽ, chính xác hơn và chi tiết hơn \ncho phương pháp giải đã chọn. Xác định rõ ràng dữ liệu vào, ra cho các bước thực \nhiện cơ bản và trật tự thực hiện các bước đó. Nên áp dụng phương pháp thiết kế có \ncấu trúc, từ thiết kế tổng thể tiến hành làm mịn dần từng bước. \n 4) Cài đặt chương trình: mô tả thuật giải bằng chương trình. Dựa vào thuật giải đã \nđược xây dựng, căn cứ quy tắc của một ngôn ngữ lập trình để soạn thảo ra chương \ntrình thể hiện giải thuật thiết lập ở bước 3. \n\nGiải bài toán trên máy tính \n 5) Hiệu chỉnh chương trình: Cho chương trình chạy thử để phát hiện và điều chỉnh \nsai sót nếu tìm thấy. Có hai loại lỗi: lỗi cú pháp và lỗi ngữ nghĩa. \n6) Thực hiện chương trình: Cho MTĐT thực hiện chương trình. Tiến hàn",
+      "citation": {
+        "chunkId": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_10",
+        "documentId": "070e2ab6-e112-4ac0-b298-57f58285d008",
+        "chunkIndex": 10,
+        "quote": " khác nhau để giải bài toán. \nCác phương pháp có thể khác nhau về thời gian thực hiện, chi phí lưu t"
+      }
+    },
+    {
+      "id": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_11",
+      "text": " trình: Cho chương trình chạy thử để phát hiện và điều chỉnh \nsai sót nếu tìm thấy. Có hai loại lỗi: lỗi cú pháp và lỗi ngữ nghĩa. \n6) Thực hiện chương trình: Cho MTĐT thực hiện chương trình. Tiến hành phân tích \nkết quả thu được. Việc phân tích kết quả nhằm khẳng định kết quả đó có phù hợp hay \nkhông. Nếu không, cần kiểm tra lại toàn bộ các bước một lần nữa. \n\nTừ bài toán đến chương trình \nBài toán thực \ntế \nGiải thuật tốt/tối ưu \n \n \n \n \n \nGiải thuật \n \n- Dùng Mã giả \n(Pseudocode) \n- Dùng flowchart \n \n \n \n \n \nThiết kế \nĐánh giá \nCoding \n- Mô hình toán \n- Chọn kiểu dữ liệu, \ncấu trúc dữ liệu \n- Thiết kế giải thuật  \nPhân tích, đánh giá \nthuật toán \n-Độ phức tạp \n- Cải tiến thuật toán \nNgôn ngữ lập trình \nC/C++ \nJava \nPython \n… \n\nTừ bài toán đến chương trình \n Chương trình (Program) \nLà một tập hợp các mô tả, các phát biểu, nằm trong một hệ thống qui ước về ý \nnghĩa và thứ tự thực hiện, nhằm điều khiển máy tính làm việc. Theo Niklaus Wirth \nthì:   Chương trình = Thuật toán + Cấu trúc",
+      "citation": {
+        "chunkId": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_11",
+        "documentId": "070e2ab6-e112-4ac0-b298-57f58285d008",
+        "chunkIndex": 11,
+        "quote": " trình: Cho chương trình chạy thử để phát hiện và điều chỉnh \nsai sót nếu tìm thấy. Có hai loại lỗi:"
+      }
+    },
+    {
+      "id": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_12",
+      "text": "một tập hợp các mô tả, các phát biểu, nằm trong một hệ thống qui ước về ý \nnghĩa và thứ tự thực hiện, nhằm điều khiển máy tính làm việc. Theo Niklaus Wirth \nthì:   Chương trình = Thuật toán + Cấu trúc dữ liệu.  \nCác thuật toán và chương trình đều có cấu trúc dựa trên 3 cấu trúc điều khiển cơ \nbản: \no Tuần tự (Sequential): Các bước thực hiện tuần tự một cách chính xác từ trên xuống, mỗi bước chỉ \nthực hiện đúng một lần. \no Chọn lọc (Selection): Chọn 1 trong 2 hay nhiều thao tác để thực hiện. \no Lặp lại (Repetition): Một hay nhiều bước được thực hiện lặp lại một số lần. \n\nÔn Tập \n1.\nThuật toán là gì? Trình bày các tính chất quan trọng của một thuật toán? \n2.\nCác bước xây dựng chương trình (giải bài toán trên máy tính)? \n3.\nCác cách biểu diễn thuật toán? Ưu và khuyết điểm của từng phương pháp? \n \nCho ví dụ minh họa. \n \n\nBài Tập  \n  Viết mã giả và vẽ lưu đồ thuật toán cho các chương trình sau: \n1. Đổi từ tiền VND sang tiền USD. \n2. Tính điểm trung bình của học sinh gồm các môn Toán, Lý, ",
+      "citation": {
+        "chunkId": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_12",
+        "documentId": "070e2ab6-e112-4ac0-b298-57f58285d008",
+        "chunkIndex": 12,
+        "quote": "một tập hợp các mô tả, các phát biểu, nằm trong một hệ thống qui ước về ý \nnghĩa và thứ tự thực hiện"
+      }
+    },
+    {
+      "id": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_13",
+      "text": "p? \n \nCho ví dụ minh họa. \n \n\nBài Tập  \n  Viết mã giả và vẽ lưu đồ thuật toán cho các chương trình sau: \n1. Đổi từ tiền VND sang tiền USD. \n2. Tính điểm trung bình của học sinh gồm các môn Toán, Lý, Hóa. \n3. Giải phương trình bậc 2: ax2 + bx + c = 0 \n4. Đổi từ độ sang radian và đổi từ radian sang độ \n(công thức / = a/180, với : radian, a: độ) \n5. Kiểm tra 2 số a, b giống nhau hay khác nhau. \n6. Nhập năm sinh của một người. Tính tuổi người đó. \n7. Nhập 2 số a và b. Tính tổng, hiệu, tính và thương của hai số đó. \n8. Nhập bán kính của đường tròn. Tính chu vi và diện tích của hình tròn đó. \n9. Nhập vào 2 số nguyên. Tính min và max của hai số đó. \n10. Giải hệ phương trình bậc nhất hai ẩn. \n\nBài tập \n  Nâng cao: Vẽ lưu đồ thuật toán cho các chương trình sau: \n \n1. Nhập vào số nguyên dương n. Tính tổng  S = 1 + 2 + 3 + 4 + … + n \n \n2. Nhập vào số nguyên dương n. Kiểm tra  n có phải là số nguyên tố hay không? \n\n",
+      "citation": {
+        "chunkId": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_13",
+        "documentId": "070e2ab6-e112-4ac0-b298-57f58285d008",
+        "chunkIndex": 13,
+        "quote": "p? \n \nCho ví dụ minh họa. \n \n\nBài Tập  \n  Viết mã giả và vẽ lưu đồ thuật toán cho các chương trình "
+      }
+    },
+    {
+      "id": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_14",
+      "text": ". Tính tổng  S = 1 + 2 + 3 + 4 + … + n \n \n2. Nhập vào số nguyên dương n. Kiểm tra  n có phải là số nguyên tố hay không? \n\n",
+      "citation": {
+        "chunkId": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_14",
+        "documentId": "070e2ab6-e112-4ac0-b298-57f58285d008",
+        "chunkIndex": 14,
+        "quote": ". Tính tổng  S = 1 + 2 + 3 + 4 + … + n \n \n2. Nhập vào số nguyên dương n. Kiểm tra  n có phải là số n"
+      }
+    },
+    {
+      "id": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_2",
+      "text": "ệm. \n• Nếu a ≠ 0 \n• Phương trình có nghiệm duy nhất x = -b/a \nĐầu vào: a, b thuộc R \nĐầu ra: nghiệm phương trình ax + b = 0 \n\nCác đặc trưng của thuật toán \nTính hữu hạn: có hữu hạn bước và phải dừng. \nTính xác định: các bước rõ ràng, thực thi được. \nTính đúng: quá trình thực thi theo các bước đã chỉ ra phải đi đến kết quả như ý. \nTính hiệu quả: khối lượng, không gian, thời gian tính toán không quá “lớn”. \nTính tổng quát: áp dụng được cho mọi trường hợp của bài toán. \n\nVí dụ \n–  Một lớp học cần chọn lớp trưởng theo các bước: \n1. Lập danh sách sinh viên \n2. Sắp thứ tự \n3. Chọn người đứng đầu làm lớp trưởng \n–  Danh sách cần gì? \n–  Sắp theo thứ tự nào? (tăng giảm, tiêu chí nào) \n–  Nếu trùng tiêu chí thì giải quyết ra sao? \n \n\nVí dụ \n Sửa lại: \na) Lập danh sách theo: họ tên, ngày tháng năm sinh, điểm các môn, điểm trung bình \ncuối năm. \nb) Sắp xếp theo ĐTB giảm. Nếu ĐTB bằng nhau  cùng hạng. \nc) Nếu có 01 HS đứng đầu  chọn, ngược lại chọn người có điểm toán cao nhất, nếu \nkhông ch",
+      "citation": {
+        "chunkId": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_2",
+        "documentId": "070e2ab6-e112-4ac0-b298-57f58285d008",
+        "chunkIndex": 2,
+        "quote": "ệm. \n• Nếu a ≠ 0 \n• Phương trình có nghiệm duy nhất x = -b/a \nĐầu vào: a, b thuộc R \nĐầu ra: nghiệm "
+      }
+    },
+    {
+      "id": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_3",
+      "text": "năm sinh, điểm các môn, điểm trung bình \ncuối năm. \nb) Sắp xếp theo ĐTB giảm. Nếu ĐTB bằng nhau  cùng hạng. \nc) Nếu có 01 HS đứng đầu  chọn, ngược lại chọn người có điểm toán cao nhất, nếu \nkhông chọn được  bốc thăm. \n\nPhân biệt mập mờ và lựa chọn có quyết định: \n–  Mập mờ là thiếu thông tin hoặc có nhiều lựa chọn nhưng không đủ điều kiện quyết \nđịnh, ví dụ: bước 1, 2. \n– Lựa chọn có quyết định là hoàn toàn xác định duy nhất trong điều kiện cụ thể của \nvấn đề, ví dụ bước c. \n \n\nVí dụ \n\n Tính thực thi được, ví dụ: \n– Tính        ? \n– Chạy xe thẳng từ ĐHSG đến sân bay TSN? \n\nTính dừng, ví dụ: \n– B1 nhập n; \n– B2 s=0; \n– B3 i=1; \n– B4 nếu i=n+1 sang B8, ngược lại sang B5 \n– B5 cộng i vào s \n– B6 cộng 2 vào i \n– B7 quay lại B4 \n– B8 Tổng cần tính là s  \n \n10\n\n\nPhương pháp biểu diễn thuật toán \nThuật toán thường được biểu diễn bằng các ngôn ngữ sau: \no Dùng ngôn ngữ tự nhiên (NNTN - natural language) \no Dùng mã giả (pseudocode): ngôn ngữ tự nhiên (NNTN) + ngôn ngữ \nlập trình (NNLT) ",
+      "citation": {
+        "chunkId": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_3",
+        "documentId": "070e2ab6-e112-4ac0-b298-57f58285d008",
+        "chunkIndex": 3,
+        "quote": "năm sinh, điểm các môn, điểm trung bình \ncuối năm. \nb) Sắp xếp theo ĐTB giảm. Nếu ĐTB bằng nhau  cù"
+      }
+    },
+    {
+      "id": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_4",
+      "text": "t toán \nThuật toán thường được biểu diễn bằng các ngôn ngữ sau: \no Dùng ngôn ngữ tự nhiên (NNTN - natural language) \no Dùng mã giả (pseudocode): ngôn ngữ tự nhiên (NNTN) + ngôn ngữ \nlập trình (NNLT) \no Dùng lưu đồ - sơ đồ khối (flowchart) \n\nBiểu diễn bằng ngôn ngữ tự nhiên  \nDùng ngôn ngữ thường ngày để liệt kê các bước của thuật toán. \nKhông thể hiện rõ cấu trúc của thuật toán. \nDài dòng, có thể gây hiểu lầm hoặc khó hiểu \nKHÔNG yêu cầu người viết hay đọc nắm quy tắc. \no\nKhông có một quy tắc cố định \nTính dễ đọc: \no\nViết các bước con lùi vào bên phải \no\nĐánh số bước theo quy tắc phân cấp như 1, 1.1, ... \n\nBiểu diễn bằng mã giả \nVay mượn các cú pháp của một ngôn ngữ lập trình \no dùng một phần ngôn ngữ tự nhiên \no bị phụ thuộc vào ngôn ngữ lập trình. \nMọi ngôn ngữ lập trình đều có những thao tác cơ bản \no xử lý, rẽ nhánh và lặp  \no tận dụng được các khái niệm trong ngôn ngữ lập trình \nDễ dàng nắm bắt nội dung thuật toán \n\nBiểu diễn bằng mã giả - Ví dụ \nif Delta > 0 then \n  x1=(",
+      "citation": {
+        "chunkId": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_4",
+        "documentId": "070e2ab6-e112-4ac0-b298-57f58285d008",
+        "chunkIndex": 4,
+        "quote": "t toán \nThuật toán thường được biểu diễn bằng các ngôn ngữ sau: \no Dùng ngôn ngữ tự nhiên (NNTN - n"
+      }
+    },
+    {
+      "id": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_5",
+      "text": "hững thao tác cơ bản \no xử lý, rẽ nhánh và lặp  \no tận dụng được các khái niệm trong ngôn ngữ lập trình \nDễ dàng nắm bắt nội dung thuật toán \n\nBiểu diễn bằng mã giả - Ví dụ \nif Delta > 0 then \n  x1=(-b-sqrt(delta))/(2*a) \n  x2=(-b+sqrt(delta))/(2*a) \n  xuất kết quả : phương trình có hai nghiệm là x1 và x2 \nend \nelse \n     if delta = 0 then \n                xuất kết quả : phương trình có nghiệm kép là -b/(2*a) \n     else {trường hợp delta < 0 } \n               xuất kết quả : phương trình vô nghiệm \n Một đoạn mã giả của thuật toán giải pt bậc hai \n\nBiểu diễn bằng lưu đồ \nCác nhà lập trình đưa ra dạng \nlưu đồ để minh họa từng bước \nquá trình xử lý một vấn đề (bài \ntoán). \n\nBiểu diễn bằng lưu đồ \nCông cụ trực quan diễn đạt thuật toán. \no  Biểu diễn bằng mô hình – hình vẽ \nTheo dõi được: \no  Sự phân cấp các trường hợp \no  Quá trình xử lý của thuật toán \nPhân biệt hai loại thao tác: \no Chọn lựa theo một điều kiện nào đó \no  Xử lý, hành động \n\n Biểu diễn bằng lưu đồ \nChọn lựa theo một đ",
+      "citation": {
+        "chunkId": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_5",
+        "documentId": "070e2ab6-e112-4ac0-b298-57f58285d008",
+        "chunkIndex": 5,
+        "quote": "hững thao tác cơ bản \no xử lý, rẽ nhánh và lặp  \no tận dụng được các khái niệm trong ngôn ngữ lập tr"
+      }
+    },
+    {
+      "id": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_6",
+      "text": "  Sự phân cấp các trường hợp \no  Quá trình xử lý của thuật toán \nPhân biệt hai loại thao tác: \no Chọn lựa theo một điều kiện nào đó \no  Xử lý, hành động \n\n Biểu diễn bằng lưu đồ \nChọn lựa theo một điều kiện nào đó: \no Biểu diễn bằng một hình thoi, bên trong chứa biểu thức điều kiện. \nVí dụ: thao tác \"nếu a = b thì thực hiện thao tác B2, ngược lại thực hiện \nB4\" là thao tác chọn lựa \n\n Biểu diễn bằng lưu đồ \nThao tác chọn lựa: có thể có hai hướng đi \no một hướng ứng với điều kiện thỏa \no một hướng ứng với điều kiện không thỏa. \no 2 nhánh có nhãn \n• Đ/Đúng,Y/Yes \n• S/Sai,N /N o \n\nBiểu diễn bằng lưu đồ \nXử lý, hành động: \no Biểu diễn bằng một hình chữ nhật, bên trong chứa nội dung xử lý. \nVí dụ: \"Chọn một môn học và in ra.\" là một thao tác thuộc loại hành \nđộng. \n\nBiểu diễn bằng lưu đồ \nQuá trình thực hiện các thao tác: \no  Đường đi – route \no  Biểu diễn bằng cung có hướng \n•  nối giữa 2 thao tác: thực hiện lần lượt \n\nBiểu diễn bằng lưu đồ \nÐiểm cuối (terminator) \no Biểu diễn bằng",
+      "citation": {
+        "chunkId": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_6",
+        "documentId": "070e2ab6-e112-4ac0-b298-57f58285d008",
+        "chunkIndex": 6,
+        "quote": "  Sự phân cấp các trường hợp \no  Quá trình xử lý của thuật toán \nPhân biệt hai loại thao tác: \no Ch"
+      }
+    },
+    {
+      "id": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_7",
+      "text": "\nQuá trình thực hiện các thao tác: \no  Đường đi – route \no  Biểu diễn bằng cung có hướng \n•  nối giữa 2 thao tác: thực hiện lần lượt \n\nBiểu diễn bằng lưu đồ \nÐiểm cuối (terminator) \no Biểu diễn bằng hình ovan \no Điểm khởi đầu \n• chỉ có cung đi ra \n• bên trong ovan ghi chữ: bắt đầu/start/begin \no Điểm kết thúc \n• Chỉ có cung đi vào \n• bên trong ovan ghi chữ: kết thúc/end \nMỗi lưu đồ chỉ có 1 điểm bắt đầu và 1 điểm kết thúc. \n\nBiểu diễn bằng lưu đồ \nĐiểm nối (connector) \no  Nối các phần khác nhau của một lưu đồ \no  Nối sang trang \no  Sử dụng với lưu đồ phức tạp \n• Giảm độ rắc rối \n• Đặt ký hiệu liên hệ giữa các điểm nối \n\nVí dụ: Sử dụng ngôn ngữ tự nhiên \n1. Nhập 2 số thực a và b. \n2. Nếu a = 0 thì \n \n2.1. Nếu b = 0 thì \n \n \n2.1.1. Phương trình vô số nghiệm \n \n \n2.1.2. Kết thúc thuật toán. \n \n2.2. Ngược lại \n \n \n2.2.1. Phương trình vô nghiệm. \n \n \n2.2.2. Kết thúc thuật toán. \n3. Ngược lại \n \n3.1. Phương trình có nghiệm. \n \n3.2. Giá trị của nghiệm đó là x = -b/a \n \n3.3. Kết thúc thuật",
+      "citation": {
+        "chunkId": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_7",
+        "documentId": "070e2ab6-e112-4ac0-b298-57f58285d008",
+        "chunkIndex": 7,
+        "quote": "\nQuá trình thực hiện các thao tác: \no  Đường đi – route \no  Biểu diễn bằng cung có hướng \n•  nối gi"
+      }
+    },
+    {
+      "id": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_8",
+      "text": "n. \n \n2.2. Ngược lại \n \n \n2.2.1. Phương trình vô nghiệm. \n \n \n2.2.2. Kết thúc thuật toán. \n3. Ngược lại \n \n3.1. Phương trình có nghiệm. \n \n3.2. Giá trị của nghiệm đó là x = -b/a \n \n3.3. Kết thúc thuật toán. \nĐầu vào: a, b thuộc R \nĐầu ra: nghiệm phương trình ax + b = 0 \n\nVí dụ: Sử dụng mã giả \nIf a = 0 Then \n \nIf b = 0 Then \n \n \nXuất “Phương trình vô số nghiệm” \n \nElse \n \n \nXuất “Phương trình vô nghiệm” \nEnd \nElse \n \nXuất “Phương trình có nghiệm x = -b/a” \nĐầu vào: a, b thuộc R \nĐầu ra: nghiệm phương trình ax + b = 0 \n\nVí dụ: Sử dụng sơ đồ khối \n \nBắt đầu \nĐọc a,b \na = 0 \nTính \nx = -b/a \nXuất \n“VN” \nb = 0 \nXuất \n“VSN” \nKết thúc \nXuất x \nS \nĐ \nĐ \nS \n\nCài đặt thuật toán bằng C/C++ \n#include <stdio.h> \n#include <conio.h> \n \nint main() \n{ \n \nint a, b; \n \nprintf(\"Nhap a, b: \"); \n \nscanf(\"%d  %d\", &a, &b); \n \nif (a == 0) \n \n \nif (b == 0) \n \n \n \nprintf(“Phương trình VSN”); \n \n \nelse \n \n \n \nprintf(“Phương trình VN”); \n \nelse \n \n \nprintf(“x = %.2f”, -float(b)/a); \n   return 0; \n} \n\nVí dụ 1  \n ",
+      "citation": {
+        "chunkId": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_8",
+        "documentId": "070e2ab6-e112-4ac0-b298-57f58285d008",
+        "chunkIndex": 8,
+        "quote": "n. \n \n2.2. Ngược lại \n \n \n2.2.1. Phương trình vô nghiệm. \n \n \n2.2.2. Kết thúc thuật toán. \n3. Ngược "
+      }
+    },
+    {
+      "id": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_9",
+      "text": "\", &a, &b); \n \nif (a == 0) \n \n \nif (b == 0) \n \n \n \nprintf(“Phương trình VSN”); \n \n \nelse \n \n \n \nprintf(“Phương trình VN”); \n \nelse \n \n \nprintf(“x = %.2f”, -float(b)/a); \n   return 0; \n} \n\nVí dụ 1  \n  Chuẩn bị cà phê \n\nVí dụ 2  \n  Tính toán nghiệm x = -b/a  \nCộng hai số c = a+b  \n\nVí dụ 3  \n  Kiểm tra 2 số a và b giống hay \nkhác nhau  \n\nVí dụ 4  \n  Kiểm tra điểm thi có hợp lệ hay \nkhông? \n\nVí dụ 5  \n  Kiểm tra một số là  \no Số dương \no Số âm \no  hay bằng 0  \n\nVí dụ 6  \n Xếp lon bia vào thùng \n(tối đa chứa được 24 \nlon) \n\nGiải bài toán trên máy tính \nCác bước giải quyết vấn đề, bài toán bằng máy tính điện tử (MTĐT): \n 1) Xác định vấn đề, bài toán: xác định rõ yêu cầu của bài toán, bài toán cho gì \n(Input) và yêu cầu tìm gì (Output). \n 2) Lựa chọn phương pháp giải: Có thể có nhiều cách khác nhau để giải bài toán. \nCác phương pháp có thể khác nhau về thời gian thực hiện, chi phí lưu trữ dữ liệu, độ \nchính xác, … => tùy theo nhu cầu cụ thể mà chọn phương pháp giải thích hợp. \n\nGiải b",
+      "citation": {
+        "chunkId": "070e2ab6-e112-4ac0-b298-57f58285d008_chunk_9",
+        "documentId": "070e2ab6-e112-4ac0-b298-57f58285d008",
+        "chunkIndex": 9,
+        "quote": "\", &a, &b); \n \nif (a == 0) \n \n \nif (b == 0) \n \n \n \nprintf(“Phương trình VSN”); \n \n \nelse \n \n \n \nprin"
+      }
+    },
+    {
       "id": "1710fb59-0acb-48f7-9dd5-d8de899c2795_chunk_0",
       "text": "Công nghệ\ntri thức \nvà ứng \ndụng\nTS. HUỲNH MINH TRÍ\nChương 7. Máy Học và \nKhai Phá Dữ Liệu (tt)\n\nTham khảo thêm:\n[1] GS.TSKH Hoàng Kiếm. Bài \ngiảng cao học môn học cơ sở tri \nthức và ứng dụng. ĐHKHTN-\nTPHCM.\n[2] Hand, Mannila & Smyth. \nPrinciples of Data Mining, \nThe MIT Press, 2001.\n[3] Wu & Kumar. The Top \nTen Algorithms in Data \nMining, Chapman & \nHall/CRC, 2009, \nPhần III: \nKhai phá \ndữ liệu và \nkhám phá \ntri thức\n\nHọc Máy & Khai phá dữ liệu\n▪Giới thiệu về\n✓Học máy\n✓Khai phá dữ liệu\n✓Các framework và công cụ phần mềm\n▪Tiền xử lý dữ liệu\n▪Đánh giá hiệu năng của hệ thống\n▪Hồi quy\n▪Phân cụm\n▪Phân lớp\n\nTập dữ liệu\n▪Một tập dữliệu (dataset) là một tập hợp các đối tượng\n(objects) và các thuộc tính của chúng\n▪Mỗi thuộc tính (attribute) mô tảmột đặc điểm của một\nđối tượng\n✓Vd: Các thuộc tính Refund, Marital Status, Taxable\nIncome, Cheat\n▪Một tập các giá trịcủa các thuộc tính mô tảmột đối\ntượng\n✓Khái niệm “đối tượng” còn được tham chiếu đến\nvới các tên gọi khác: bản ghi (record), điểm dữ\nli",
       "citation": {
@@ -2389,6 +2539,236 @@
         "documentId": "SGU_QUY_DINH_2375",
         "chunkIndex": 1,
         "quote": "Điều 1. Điều kiện chuyển chương trình đào tạo, ngành đào tạo\nSinh viên có nguyện vọng (theo đơn) đượ"
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_0",
+      "text": "Dự báo giá vàng nhìn từ mô hình \nhồi quy tuyến tính và mô hình học máy\nPHAN ANH\n*\n*TS., ”TS., Học viện Ngân hàng\nNgày nhận bài: 01/02/2023; Ngày phản biện: 10/02/2023; Ngày duyệt đăng: 18/02/2023\nTRƯƠNG THỊ THÒY DƯƠNG\n**\nTóm tắt\nNghiên cứu này sử dụng ba mô hĩnh, gồm: hồi quy tuyến tính (LR), cây quyết định (DT) và mô \nhình Extreme Gradient Boosting (Xgboost) để dự đoán giá vàng tại Việt Nam. Kết quả cho \nthấy, mô hĩnh học máy (DT và Xgboost) đều cho kết quả dự báo tốt hơn với các chỉ sô'nhỏ hơn \nso với mô hình LR. Bên cạnh đó, chỉ số giá tiêu dùng của Mỹ, chỉ số giá tiêu dùng của Việt \nNam, chỉ số giá hàng hóa cơ bản, giá vàng và giá dầu thế giới là các thông số đầu vào quan \ntrọng trong dự báo giá vàng Việt Nam thông qua các mô hình học máy.\nTừ khóa: học máy, mô hình hồi quy tuyến tính, dự đoán giá vàng\nSummary\nThis study uses three models including linear regression (LR), decision tree (DT) and Extreme \nGradient Boosting (Xgboost) to predict gold price in Vietnam. The results show t",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_0",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 0,
+        "quote": "Dự báo giá vàng nhìn từ mô hình \nhồi quy tuyến tính và mô hình học máy\nPHAN ANH\n*\n*TS., ”TS., Học vi"
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_1",
+      "text": "dự đoán giá vàng\nSummary\nThis study uses three models including linear regression (LR), decision tree (DT) and Extreme \nGradient Boosting (Xgboost) to predict gold price in Vietnam. The results show that machine \nlearning models (DT and Xgboost) both give better prediction with smaller indexes than LR \nmodel. In addition, US consumer price index, Vietnam consumer price index, commodity price \nindex, gold price and world oil price are important inputs to forecast gold price in Vietnam \nthrough machine learning models.\nKeywords: machine learning, linear regression model, gold price prediction\nGIỚI THIỆU\nVàng đóng vai trò quan trọng trong hệ thông tiền \ntệ cũng như tài chính. Các ngân hàng trung ương trên \ntoàn cầu duy trì dự trữ vàng để đảm bảo cho những \nngười nắm giữ tiền tệ, tiền của các cổ đông của họ và \ncác chủ nợ nước ngoài. Họ cũng sử dụng vàng như một \nphương tiện để quản lý lạm phát và củng cố vị thế kinh \ntế của đất nước. Dự báo xu hướng của giá vàng sẽ giúp \ních cho các nhà đ",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_1",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 1,
+        "quote": "dự đoán giá vàng\nSummary\nThis study uses three models including linear regression (LR), decision tre"
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_10",
+      "text": " kê mô tả\nDiễn biến giá vàng trong nước, giá vàng thế giới, \ngiá dầu thế giới và lạm phát Việt Nam giai đoạn từ \nnăm 2008 đến 2021 cho thấy có sự tương đồng giữa \nxu hướng tăng của giá vàng trong nước với giá vàng \nthế giới, giữa giá vàng trong nước và lạm phát. Tuy \nnhiên, giá vàng thế giới năm 2021 chứng kiến sự thay\nEconomy and Forecast Review\n89\n\nBẢNG 2: THỐNG KÊ MÒ TẢ\nBiến\nmean\nstd\nmin\n25%\n50%\n75%\nmax\ncpi_vn\n139.6224\n28.352\n75.887\n123.701\n144.852\n161.919\n180.062\ner vn\n21133.42 2132.033\n15960\n20778\n21757.5\n22992\n23695\ndeposit rate vn\n7.216235\n3.57738\n3.34\n4.8\n5.25\n9\n17.16\nm2 vn\n5584703\n3310900\n1278398\n2571606 5029103\n8409914 12405120\niip vn\n209.704\n104.511\n70.023\n107.092\n179.674\n318.211\n407.612\ngold vn\n39.19683 12.43336\n16.75 34.26725\n36.615\n44.7275\n70.2\ngold world eq\n35.67471\n9.886\n14.4337\n30.613\n34.525\n42.406\n55.267\npolitical stab vn\n0.124\n0.122\n-0.09\n0.03\n0.155\n0.23\n0.27\npolitical_stab_world\n0.059\n0.034\n0.01\n0.04\n0.06\n0.07\n0.14\ncpia budget\n3.643\n0.227\n3.5\n3.5\n3.5\n4\n4\ncpia trade\n",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_10",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 10,
+        "quote": " kê mô tả\nDiễn biến giá vàng trong nước, giá vàng thế giới, \ngiá dầu thế giới và lạm phát Việt Nam g"
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_11",
+      "text": ".4337\n30.613\n34.525\n42.406\n55.267\npolitical stab vn\n0.124\n0.122\n-0.09\n0.03\n0.155\n0.23\n0.27\npolitical_stab_world\n0.059\n0.034\n0.01\n0.04\n0.06\n0.07\n0.14\ncpia budget\n3.643\n0.227\n3.5\n3.5\n3.5\n4\n4\ncpia trade\n3.829\n0.240\n3.5\n3.5\n4\n4\n4\ncpia public admin\n3.464\n0.129\n3\n3.5\n3.5\n3.5\n3.5\ncpia debt policy\n3.75\n0.251\n3.5\n3.5\n3.75\n4\n4\ncpi_us\n136.786\n310.183\n-1545.98\n-32.6961\n139.454\n344.411\n813.395\nbond yield US\n2.380\n0.803\n0.62\n1.8075\n2.325\n2.89\n4.1\ngold world\n1350.112 279.7808\n725.05 1183.438\n1295.64 1573.228\n1974.69\noil world\n71.1661\n23.681\n19.23\n50.4925\n68.495\n91.955\n139.96\ncrb\n87.727\n23.555 44.39885\n67.844\n82.477\n104.855\n163 765\nHÌNH 1: HỆ SỐ TƠƠNG QGAN GIỮA CÁC BIÊN\nrtES ['IB [Jfl\n[jaai-raBfrH\nEX£ 0.46 -0.07\n-0 O3|EEL 0 18 1□LE rasHP.170.33\ncpi vn -□EQ EEQ EE3 FU?rjXTi\nẸSỊỊrnm o 01\nỊ-O 02 0 48 0 08\n1‘ta. LỊiơơ ILL\nFin Wfgii\nEli Eli;\nooo\n0.02 0 40 0 08 ị\nGE3EE? EE?\ndeposit_rate_vn -\nEEE LX£ EEEI \nFIEF t»»>| ['E-U \nIl\n□EẼO 37 049 040 EXSSES\nEEQ FBI EEQ Fired F*Ad\n Fifin\n0.01\n0 15\n0.14 □EE\n001 \n-0 03",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_11",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 11,
+        "quote": ".4337\n30.613\n34.525\n42.406\n55.267\npolitical stab vn\n0.124\n0.122\n-0.09\n0.03\n0.155\n0.23\n0.27\npolitical"
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_12",
+      "text": "ta. LỊiơơ ILL\nFin Wfgii\nEli Eli;\nooo\n0.02 0 40 0 08 ị\nGE3EE? EE?\ndeposit_rate_vn -\nEEE LX£ EEEI \nFIEF t»»>| ['E-U \nIl\n□EẼO 37 049 040 EXSSES\nEEQ FBI EEQ Fired F*Ad\n Fifin\n0.01\n0 15\n0.14 □EE\n001 \n-0 03\n1-0.13 i\n0.30\nSL \nRFfi\n0.03\n0 14\n0 09 EE\nI«1M1\n0.18 ntofil\nEESĨ3S5 \n0.49 EE?\nEES\n2X1\nSEE\ngoldworldeq -| \npolitical_stab_vn 4 \npoliticai_stab_world -|\nnrrni rwa nrnn -0.37 EQ3 pipa mn \nyr gggryy. 049 rwiiprr\nQSE ESE \nO 4O Ĩ«K--Ị-! MTV1\nẸỊỊỊ\nEEE ULL \n0 36 \n0.43\n0.42\n□EE\n-0.02\n0 29\n-0.09\n0.02| \nOOl 1 \n0.02 1\nl»t-TI \nE2LE\no 18 1 \no 09 \n0.16\n□EE \n0.40 \nBE3\nEEQ -\n0.37 0.26\nEEE 0.32\n-0.35 \n0 34 \ntt44\ncpiabudqetquahty -| \ncpia public admin -\nr?EE2 t'X-&! \n0 46 t»i:H f»rnn \n0.070.01 000\nEIE EEt! EES Ỉ3EE 0 36 0 43\nEESESĐQIEI 0 42\n0.01 0 15 0 14 0.02 0.29 0 09\nOE3 \nEEE \n0.18\nSEE\n-0.21\n018\n-0.21\nEBB -0.28\no 02\n-0 01\n0.03\no 25 0 03 1 \n029 0 04 I \n0.11 0 03\nQEQ \nQEE \n0.01\nEE- 0 37\n0 21 idE'Sd\n0.05 0.310.17\ncpia debt policy \nEE£ i'lri.- ESS \nSEE\n048 \nEES\no 28ÍW<ĨI1ị 0 02 o 39 0 09 F ‘7: -0 23l5WUITl\nlu",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_12",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 12,
+        "quote": "ta. LỊiơơ ILL\nFin Wfgii\nEli Eli;\nooo\n0.02 0 40 0 08 ị\nGE3EE? EE?\ndeposit_rate_vn -\nEEE LX£ EEEI \nFIE"
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_13",
+      "text": "28\no 02\n-0 01\n0.03\no 25 0 03 1 \n029 0 04 I \n0.11 0 03\nQEQ \nQEE \n0.01\nEE- 0 37\n0 21 idE'Sd\n0.05 0.310.17\ncpia debt policy \nEE£ i'lri.- ESS \nSEE\n048 \nEES\no 28ÍW<ĨI1ị 0 02 o 39 0 09 F ‘7: -0 23l5WUITl\nlunar_tet -o 030.02 o 02 O.Ol o 030.13 -O 02 OOl 0 02 o 02-0.01 003 0 02 EEQ a 03 0 22 003 o 02 0 02 0 01\ncovidl9_cnsis\n048 0 40 0.38 EEa \n.25 0.29 0.11 Ot39\no 18 0 08 0 08 o 03 0.14 0 09 0 18 -O 09 o 16 o 03 0 04 0 03 o 09\nOOJ Qjjg 0 18 M\n*l\nFyF|o 27 0 31\n0 22 o 18 UJW '01 0 20 0 22 0 16\nbond_yield_us -|Lil\ni'XTU \npra I'XTI MT-y 0 40 : M \nFl£g OOI\n003 1\n0011\nEEE O4& li-.Q\ngold world Llk EEJEEJo 18 nm 0 49 1KB 4>»7QQJ-irE 0.21 -0.05 41.23 o 02 pn o 20 E»J? \n1 03 o 16\n«1 world -0.17\nnrn LX-i. ur o 19 0 26 0 32 037 FXUO31CTH o 02-0 27 0 22 049 -0 0 3f»glEPT-\nơb -o 33\nFIR? \ni'tff EEE-0.35 0 34 0 44QE3 Mfrfa 23 17\n0 01 o 31 0 16 fair J -Pin\n-025\n- 0 00\n-O 2S\ní I ■' ị: í í Ị ị: Ị. 11 J. I ■I. ỉ' ỉ . ỉ ’ \nỉ »ỉ I I ị i ’ -\ní ê ®\nBẢNG 3: GIÁ TRỊ ĐÁNH GIÁ\nMô hình\nMSE\nRMSE\nMAE\nLR\n2.496\n1.579\n1.1667\nDT",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_13",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 13,
+        "quote": "28\no 02\n-0 01\n0.03\no 25 0 03 1 \n029 0 04 I \n0.11 0 03\nQEQ \nQEE \n0.01\nEE- 0 37\n0 21 idE'Sd\n0.05 0.310"
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_14",
+      "text": "QE3 Mfrfa 23 17\n0 01 o 31 0 16 fair J -Pin\n-025\n- 0 00\n-O 2S\ní I ■' ị: í í Ị ị: Ị. 11 J. I ■I. ỉ' ỉ . ỉ ’ \nỉ »ỉ I I ị i ’ -\ní ê ®\nBẢNG 3: GIÁ TRỊ ĐÁNH GIÁ\nMô hình\nMSE\nRMSE\nMAE\nLR\n2.496\n1.579\n1.1667\nDT\n1.9807\n1.407\n0.892\nXgboost\n1.7404\n1.319\n0.896\nNguồn: Tổng hợp của nhóm tác giả\nđổi chiều liên tục, giá vàng trong nước cũng thể hiện \nsự giằng co nhưng với mức độ biến động ít hơn, nguyên \nnhân gây ra sự biến động này đến từ ảnh hưởng của đại \ndịch Covid-19 và chính sách tiền tệ của các quốc gia. \nCó sự khác biệt không lớn giữa giá vàng trong nước với \ngiá dầu thế giới, khi chứng kiến sự giảm giá dầu năm \n2020 và bật tăng vào năm 2021. Diễn biến tỷ giá USD \nvà VND, cung tiền, chỉ số sản xuất công nghiệp và lãi \nsuất tiền gửi của Việt Nam giai đoạn 2008-2021 cho \nthấy, lãi suất tiền gửi có xu hướng giảm từ năm 2012, \ntỷ giá có xu hướng tăng trong thời kỳ dài tuy nhiên có \nsự ổn định đi ngang năm 2021 và 2022.\nBảng 2 biểu diễn thống kê mô tả của các biến độc \nlập và biến phụ thuộc trong gia",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_14",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 14,
+        "quote": "QE3 Mfrfa 23 17\n0 01 o 31 0 16 fair J -Pin\n-025\n- 0 00\n-O 2S\ní I ■' ị: í í Ị ị: Ị. 11 J. I ■I. ỉ' ỉ "
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_15",
+      "text": "hướng giảm từ năm 2012, \ntỷ giá có xu hướng tăng trong thời kỳ dài tuy nhiên có \nsự ổn định đi ngang năm 2021 và 2022.\nBảng 2 biểu diễn thống kê mô tả của các biến độc \nlập và biến phụ thuộc trong giai đoạn nghiên cứu cho \nthấy sự biến động mạnh của giá vàng, giá dầu trong \nnước và trên thế giới, chỉ sô' CPI của Mỹ và tỷ giá \nđồng USD so với VND thể hiện ở độ lệch tiêu chuẩn.\nDữ liệu sau khi được chia ngẫu nhiên \nthành hai tập huấn luyện và tập kiểm tra \ntheo tỷ lệ 75% và 25% sau khi đã làm \nsạch với mục đích để huấn luyện mô \nhình và kiểm tra để đánh giá hiệu quả \ncủa mô hình.\nCó sự tương quan cao giữa các nhóm \nbiến như tỷ giá USD/VND với chỉ số giá \ntiêu dùng, chất lượng quản lý ngân sách \nvà chất lượng chính sách thương mại, \ncung tiền và chỉ số giá tiêu dùng, chỉ số \ngiá tiêu dùng và chỉ số sản xuất công \nnghiệp, giữa giá dầu và chỉ số hàng hóa \ncơ bản. Tuy nhiên, ttong mô hình hồi quy, \nnhóm tác giả vẫn sử dụng tất cả các biến \nđể so sánh hiệu quả xử lý tương quan cao \ncủa mô hìn",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_15",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 15,
+        "quote": "hướng giảm từ năm 2012, \ntỷ giá có xu hướng tăng trong thời kỳ dài tuy nhiên có \nsự ổn định đi ngang"
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_16",
+      "text": "chỉ số sản xuất công \nnghiệp, giữa giá dầu và chỉ số hàng hóa \ncơ bản. Tuy nhiên, ttong mô hình hồi quy, \nnhóm tác giả vẫn sử dụng tất cả các biến \nđể so sánh hiệu quả xử lý tương quan cao \ncủa mô hình học máy so với LR (Hình 1).\nKết quả nghiên cứu\nDữ liệu về giá vàng và các biến giải \nthích sau khi được chia ngẫu nhiên thành \nhai tập huấn luyện và kiểm tra được sử \ndụng trong hai giai đoạn: giai đoạn thứ \nnhất huấn luyện mô hình từ tập dữ liệu \nhuấn luyện với ba phương pháp là LR, \nDT và Xgboost; giai đoạn thứ hai dự báo \nsử dụng mô hình đã được huấn luyện trên \ntập dữ liệu kiểm tra. Các giá trị đánh giá \nmô hình trên tập kiểm tra thể hiện trong \nBảng 3.\nBảng 3 cho thấy, cả hai mô hình DT \nvà Xgboost đều cho kết quả dự báo tốt \nhơn với các chỉ số nhỏ hơn so với LR. Mô \nhình Xgboost cho kết quả dự báo chính \nxác nhất với sai số 1.7404 so với DT và \nLR lần lượt là 1.9807 và 2.496. Có thể \nmột sô' biến độc lập trong mô hình có \ntương quan cao với nhau làm ảnh hưởng \nđến hiệu quả của mô h",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_16",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 16,
+        "quote": "chỉ số sản xuất công \nnghiệp, giữa giá dầu và chỉ số hàng hóa \ncơ bản. Tuy nhiên, ttong mô hình hồi "
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_17",
+      "text": "t quả dự báo chính \nxác nhất với sai số 1.7404 so với DT và \nLR lần lượt là 1.9807 và 2.496. Có thể \nmột sô' biến độc lập trong mô hình có \ntương quan cao với nhau làm ảnh hưởng \nđến hiệu quả của mô hình LR, tuy nhiên, \nmô hình DT và Xgboost xử lý tốt hơn \nhiện tượng này. Do đó, mô hình Xgboost \ncó thể được sử dụng để dự báo giá vàng \ntrong thời gian kê' tiếp.\nTừ kết quả dự báo đánh giá mô hình \nXgboost tốt nhất, nghiên cứu thực hiện \nđánh giá tầm quan trọng của các biến \ntrong mô hình (Hình 2). Các biến: cpi_us, \ngols_world, cpi_vn, crb và giá dầu đóng \nvai trò quan trọng nhất trong dự báo giá \nvàng, hay nói cách khác, các biến này \ncó tác động đến giá vàng trong nước. \nTiếp theo sau là các biến đại diện cho \nchỉ sô' sản xuất công nghiệp Việt Nam, \nlãi suất trái phiếu chính phủ 10 năm của \nMỹ, cung tiền, tỷ giá và mức độ ổn định \nchính trị của Việt Nam và trên thê' giới. \nMặc dù các sự kiện ngẫu nhiên như đại \ndịch Covid-19 làm ảnh hưởng đến kinh \ntê' trong và ngoài nước, có thể gây r",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_17",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 17,
+        "quote": "t quả dự báo chính \nxác nhất với sai số 1.7404 so với DT và \nLR lần lượt là 1.9807 và 2.496. Có thể "
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_18",
+      "text": " \nMỹ, cung tiền, tỷ giá và mức độ ổn định \nchính trị của Việt Nam và trên thê' giới. \nMặc dù các sự kiện ngẫu nhiên như đại \ndịch Covid-19 làm ảnh hưởng đến kinh \ntê' trong và ngoài nước, có thể gây ra suy \n90\nKinh tế và Dự báo\n\nKinhjế\nvà Dự báo\nthoái đến nền kinh tế, nhưng chưa thấy \nbằng chứng thể hiện vai trò quan trọng \ncủa nó trong sự thay đổi của giá vàng. \nĐiều này có thể giải thích bởi giá vàng ít \nbị biến động trong thời gian ngắn.\nKẾT LUẬN\nCác mô hình học máy được chỉ ra là \ncó hiệu quả tốt hơn so với các mô hình \nthông kê truyền thông trong nhiều lĩnh \nvực khác nhau, ưu điểm của mô hình \nhọc máy không đòi hỏi chặt chẽ về \nđiều kiện của dữ liệu và mốì quan hệ \ngiữa biến độc lập với biến phụ thuộc, \ndo đó khả năng ứng dụng rộng hơn và \nlinh hoạt hơn. Trong bài nghiên cứu, mô \nhình DT và Xgboost cho kết quả vượt \ntrội so với mô hình LR trong dự báo xu \nhướng của giá vàng Việt Nam. Đồng \nthời, chỉ ra các nhân tô' tác động đến giá \nvàng bằng cách chỉ ra tầm quan trọng \ncủa các đặ",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_18",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 18,
+        "quote": " \nMỹ, cung tiền, tỷ giá và mức độ ổn định \nchính trị của Việt Nam và trên thê' giới. \nMặc dù các sự "
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_19",
+      "text": " DT và Xgboost cho kết quả vượt \ntrội so với mô hình LR trong dự báo xu \nhướng của giá vàng Việt Nam. Đồng \nthời, chỉ ra các nhân tô' tác động đến giá \nvàng bằng cách chỉ ra tầm quan trọng \ncủa các đặc tính trong mô hình hồi quy, \ntừ đó giúp các nhà nghiên cứu, đầu tư có \ncác đánh giá phù hợp về sự biến động \ncủa vàng cũng như có các danh mục đầu \ntư hiệu quả.\nHÌNH 2: TẦM QGAN TRỌNG CỎA CÁC NHÂN Tố \nTRONG MÔ HÌNH XGBOOST\nTuy nhiên, để tăng hiệu quả dự báo của mô hình \nhọc máy, cần bổ sung và cập nhật thông tin, số liệu \nliên tục để nắm bắt tốt được sự thay đổi hoặc chuyến \nbiến của thị trường. Sẽ có trường hợp đòi hỏi xây dựng \nlại mô hình dự báo để phù hợp hơn với tình hình mới. \nCần cập nhật và phân tích các thông tin có liên quan \nđến giá vàng mà mô hình không thể lượng hóa được \nđể có sự điều chỉnh phù hợp, như: thông tin về thuế, \nhạn ngạch, các chính sách có liên quan... và thông tin \nvề thị trường chứng khoán, bất động sản. Tuy không \nthể đưa vào mô hình học máy để tính toán sô'",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_19",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 19,
+        "quote": " DT và Xgboost cho kết quả vượt \ntrội so với mô hình LR trong dự báo xu \nhướng của giá vàng Việt Nam"
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_2",
+      "text": "cổ đông của họ và \ncác chủ nợ nước ngoài. Họ cũng sử dụng vàng như một \nphương tiện để quản lý lạm phát và củng cố vị thế kinh \ntế của đất nước. Dự báo xu hướng của giá vàng sẽ giúp \ních cho các nhà đầu tư và các nhà quản lý tiền tệ trong \nviệc lựa chọn thời điểm cung ứng mặt hàng này.\nHọc máy (machine learning) là một loại trí tuệ nhân \ntạo cho phép các ứng dụng của phần mềm trở nên chính \nxác hơn trong việc dự đoán kết quả. Các thuật toán của \nhọc máy sử dụng thông tin lịch sử làm đầu vào để dự \nbáo tốc độ đầu ra mới nhất. Kỹ thuật học máy đóng vai \ntrò quan trọng trong việc dự đoán giá vàng. Nhiều kỹ \nthuật học máy khác nhau như: máy vectơ hỗ trợ (SVM), \nrừng ngẫu nhiên (RF), cây quyết định (DT)... đã được \nsử dụng trong các nghiên cứu trước đây để dự đoán tỷ \nlệ vàng và cho kết quả chính xác (Nghiên cứu sử dụng \ncách viết sô thập phân theo chuẩn quốc tế).\nCơ SỞ LÝ THUYẾT\nVàng là tài sản đảm bảo phòng ngừa rủi ro và tối đa \nhóa danh mục đầu tư, đặc biệt là trong giai đoạn kinh tế\nsu",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_2",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 2,
+        "quote": "cổ đông của họ và \ncác chủ nợ nước ngoài. Họ cũng sử dụng vàng như một \nphương tiện để quản lý lạm p"
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_20",
+      "text": "sự điều chỉnh phù hợp, như: thông tin về thuế, \nhạn ngạch, các chính sách có liên quan... và thông tin \nvề thị trường chứng khoán, bất động sản. Tuy không \nthể đưa vào mô hình học máy để tính toán sô' liệu cụ \nthể, nhưng có thể tránh cho việc sai lầm trong nhận \nđịnh lựa chọn kết quả dự báo.Q\nTÀI LIỆU THAM KHẢO\n1. Breiman, L., Friedman, J., Stone, c. J., and Olshen, R. A. (1984), Classification and regression \ntrees, CRC press.\n2. Fortune, J. N. (1987), The inflation rate of the price of gold, expected prices and interest \nrates, Journal of Macroeconomics, 9(1), 71-82.\n3. Hiền, V. c., Khôi, p. Đ. (2019). Mối quan hệ phụ thuộc giữa giá vàng và tỷ giá ngoại tệ ở Việt \nNam, Tạp chí Khoa học Trường Đại học cần Thơ, 55(CĐ Kinh tế), 31-41.\n4. Hu, Y., Ni, J., Wen, L. (2020), A hybrid deep learning approach by integrating LSTM- \nANN networks with GARCH model for copper price volatility prediction, Physica A: Statistical \nMechanics and its Applications, 557.\n5. Ismail, z., Yahya, A., Shabri, A.",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_20",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 20,
+        "quote": "sự điều chỉnh phù hợp, như: thông tin về thuế, \nhạn ngạch, các chính sách có liên quan... và thông t"
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_21",
+      "text": "g approach by integrating LSTM- \nANN networks with GARCH model for copper price volatility prediction, Physica A: Statistical \nMechanics and its Applications, 557.\n5. Ismail, z., Yahya, A., Shabri, A. (2009), Forecasting gold prices using multiple linear \nregression method, American Journal of Applied Sciences, 6(8).\n6. Jianwei, E., Ye, J., Jin, H. (2019), A novel hybrid model on the prediction of time series and \nits application for the gold price analysis and forecasting, Physica A: Statistical Mechanics and its \nApplications, 527.\n7. Navin, Dr. G. Vadivu (2015), Big Data Analytics for Gold Price Forecasting Based on \nDecision Tree Algorithm and Support Vector Regression (SVR), International Journal of Science \nand Research, March 2015, 2026-2030.\n8. Olson, D. L., Deien, D., Meng, Y. (2012), Comparative analysis of data mining methods for \nbankruptcy prediction, Decision Support Systems, 52(2), 464-473.\n9. Parisi, A., Parisi, F., Diaz, D. (2008), Forecasting gold price changes: Rolli",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_21",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 21,
+        "quote": "g approach by integrating LSTM- \nANN networks with GARCH model for copper price volatility predictio"
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_22",
+      "text": "12), Comparative analysis of data mining methods for \nbankruptcy prediction, Decision Support Systems, 52(2), 464-473.\n9. Parisi, A., Parisi, F., Diaz, D. (2008), Forecasting gold price changes: Rolling and recursive \nneural network models, Journal of Multinational financial management, 18(5), 477-487.\n10. Sarangi, p., Dublish, s. (2013), Prediction of gold bullion return using GARCH family \nand artificial neural network models, Asian Journal of Research in Business Economics and \nManagement, 3(10), 217-230.\n11. Wen, F., Yang, X., Gong, X., Lai, K. K. (2017), Multi-scale volatility feature analysis and \nprediction of gold price, International Journal of Information Technology & Decision Making, 16(01), \n205-223.\nEconomy and Forecast Review\n91\n\n",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_22",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 22,
+        "quote": "12), Comparative analysis of data mining methods for \nbankruptcy prediction, Decision Support System"
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_3",
+      "text": "nh xác (Nghiên cứu sử dụng \ncách viết sô thập phân theo chuẩn quốc tế).\nCơ SỞ LÝ THUYẾT\nVàng là tài sản đảm bảo phòng ngừa rủi ro và tối đa \nhóa danh mục đầu tư, đặc biệt là trong giai đoạn kinh tế\nsuy thoái, nên đã thu hút được rất nhiều \nnhà nghiên cứu quan tâm. Sự thay đổi của \ngiá vàng có liên quan đến sự phát triển \ncủa nền kinh tế thế giới, việc xây dựng \ncác chính sách, tâm lý của các nhà đầu \ntư... (Wen và cộng sự, 2017). Các yếu tố \nnày gây ra sự biến động của giá vàng và \nsự khó khăn trong đánh giá xu hướng biến \nđộng của nó. Một số phương pháp dự báo \nvàng truyền thống có thể kể đến, như: LR, \nARIMA, ARCH và GARCH. Theo đó, \ngiá vàng được xác định bởi các yếu tố như \nđồng Bảng Anh, đồng Đô la Mỹ thường \nxuyên suy yếu, khủng hoảng tín dụng \ntrên toàn thế giới, nhu cầu tăng cao từ các \nnhà đầu tư tổ chức và ngân hàng trung \nương, bất ổn chính trị, tấn công khủng \nbố... Tuy nhiên, với sự phát triển của trí \ntuệ nhân tạo và các phương pháp tính toán \nthông minh, các phương pháp ",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_3",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 3,
+        "quote": "nh xác (Nghiên cứu sử dụng \ncách viết sô thập phân theo chuẩn quốc tế).\nCơ SỞ LÝ THUYẾT\nVàng là tài "
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_4",
+      "text": " các \nnhà đầu tư tổ chức và ngân hàng trung \nương, bất ổn chính trị, tấn công khủng \nbố... Tuy nhiên, với sự phát triển của trí \ntuệ nhân tạo và các phương pháp tính toán \nthông minh, các phương pháp học máy, \nnhư: SVM, mạng nhân tạo (ANN), DT, \nXgboost, RF, mạng bộ nhớ ngắn, dài hạn \nđã được sử dụng để dự báo sự thay đổi giá \nvàng (Parisi và cộng sự 2008; Jianwei và \nJin, 2019; Hu và Ni, 2020.\nNavin và Vadivu đã phát triển một \nmô hình dự báo tỷ giá vàng dựa trên hồi\n88\nKinh tế và Dự báo\n\nKinh tê'\n'ÍI Dự báo\nquy véc tơ hỗ trợ (SVR) và DT. Nhóm \ntác giả nhận thây rằng, SVR là phương \npháp tốt nhất cho số lượng lớn tập dữ \nliệu và DT để lựa chọn thuộc tính tương \nứng.\nBằng phương pháp kết hợp giữa \nphương pháp thành phần ICA và mạng \nnơ rơn GRUNN, Jianwei và Jin (2019) \nchứng minh rằng, sự biến động của giá \nvàng sẽ bị gián đoạn bởi các xu hướng \ndài hạn, các yếu tố lặp lại theo chu kỳ \nvà các sự kiện ngẫu nhiên. Điều này thể \nhiện rằng, giá vàng sẽ chịu ảnh hưởng \nbởi các sự kiện ngẫu ",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_4",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 4,
+        "quote": " các \nnhà đầu tư tổ chức và ngân hàng trung \nương, bất ổn chính trị, tấn công khủng \nbố... Tuy nhiên"
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_5",
+      "text": "biến động của giá \nvàng sẽ bị gián đoạn bởi các xu hướng \ndài hạn, các yếu tố lặp lại theo chu kỳ \nvà các sự kiện ngẫu nhiên. Điều này thể \nhiện rằng, giá vàng sẽ chịu ảnh hưởng \nbởi các sự kiện ngẫu nhiên như đại dịch \nhay tình hình chính trị.\nNghiên cứu của Hiền và Khôi (2019) \nbằng phương pháp copula đã chỉ ra rằng, \nvàng và tỷ giá ngoại tệ không có mốì liên \nhệ trong trường hợp thị trường ổn định, \nnhưng vàng và ngoại tệ cần kết nốì để \ntạo kênh trú ẩn an toàn trong giai đoạn \nthị trường đầy biến động.\nTheo quan điểm của Ismail và cộng sự \n(2009), giá vàng ít bị biến động trong thời \ngian nhất định so với các loại hàng hóa \nkhác vì nguồn cung vàng được tích lũy \ntrong khoảng thời gian dài. sử dụng mô \nhình LR để chỉ ra các yếu tố tác động đến \nvàng, các tác giả đã xây dựng được mô \nhình dự báo với độ chính xác đến 96.92%.\nSarangi và Dublish (2013) so sánh \nhiệu suất dự báo của GARCH và mô \nhình học máy, kết quả chỉ ra hiệu suất dự \nbáo vượt trội hơn của mô hình học máy \nso với GARC",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_5",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 5,
+        "quote": "biến động của giá \nvàng sẽ bị gián đoạn bởi các xu hướng \ndài hạn, các yếu tố lặp lại theo chu kỳ \nv"
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_6",
+      "text": "h dự báo với độ chính xác đến 96.92%.\nSarangi và Dublish (2013) so sánh \nhiệu suất dự báo của GARCH và mô \nhình học máy, kết quả chỉ ra hiệu suất dự \nbáo vượt trội hơn của mô hình học máy \nso với GARCH.\nDữ liệu nghiên cứu\nNghiên cứu sử dụng dữ liệu theo tháng \ntừ năm 2008 đến 2021. Các biến sử dụng \ntrong mô hình được miêu tả ở Bảng 1.\nNgoài ra, để thể hiện các sự kiện \nngẫu nhiên xảy ra trong thời kỳ nghiên \ncứu, nhóm tác giả sử dụng hai biến giả \nlunar_tet và covidl9-crisis nhận giá trị là \n0 và 1 trong mô hình.\nPhương pháp nghiên cứu\nNghiên cứu thực hiện ba mô hình \ngồm: LR, DT và Xgboost. Mô hình LR \nđược sử dụng để đánh giá các giá trị \nthực dựa trên các biến liên tục. Mô hình \nLR cũng dùng để thiết lập mối quan hệ \ngiữa các biến phụ thuộc cũng như độc \nlập bằng cách đưa ra một giải pháp thích \nhợp. Với biến phụ thuộc là giá vàng, mô \nhình LR thiết lập mối quan hệ giữa giá \nvàng và các yếu tô\" tác động bởi phương \ntrình hồi quy:\ngoldvn = /}„ + xt + e\nBẢNG 1: MÔ TẢ CÁC BIẾN TRONG N",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_6",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 6,
+        "quote": "h dự báo với độ chính xác đến 96.92%.\nSarangi và Dublish (2013) so sánh \nhiệu suất dự báo của GARCH "
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_7",
+      "text": "háp thích \nhợp. Với biến phụ thuộc là giá vàng, mô \nhình LR thiết lập mối quan hệ giữa giá \nvàng và các yếu tô\" tác động bởi phương \ntrình hồi quy:\ngoldvn = /}„ + xt + e\nBẢNG 1: MÔ TẢ CÁC BIẾN TRONG NGHIÊN cứa\nBiến\nMô tả\nNguồn\ncpi vn\nChỉ số giá tiêu dùng của Việt Nam (2010 = 100) Tổng cục Thông kê\ner vn\nTỷ giá USD/VND\nIMF\ndeposit_rate_vn\nLãi suất tiền gửi của Việt Nam\nIMF\nm2 vn\nCung tiền M2 của Việt Nam\nIMF\niip_vn\nChỉ số sản xuất công nghiệp của Việt Nam \n(2010= 100)\nIMF\ngold world_eq\nGiá vàng thế giới quy đổi VND\nBullion Rates\npolitical stab vn\nChỉ số ổn định chính trị Việt Nam\nWB\npolitical stab world Chỉ số ổn định chính trị thế giói\nWB\ncpia budget\nChất lượng quản lý ngân sách\nWB\ncpia trade\nChất lượng chính sách thương mại\nWB\ncpia public admin\nChất lượng quản trị công\nWB\ncpia debt policy\nChất lượng chính sách nợ\nWB\ncpi_us\nChỉ số giá tiêu dùng của Mỹ (2010 = 100)\nFRED\nbond yield US\nLãi suất trái phiếu chính phủ 10 năm của MỹFRED\ngold world\nGiá 1 oz vàng quy đổi VND\nBloomberg\noil world",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_7",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 7,
+        "quote": "háp thích \nhợp. Với biến phụ thuộc là giá vàng, mô \nhình LR thiết lập mối quan hệ giữa giá \nvàng và "
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_8",
+      "text": "\nChất lượng chính sách nợ\nWB\ncpi_us\nChỉ số giá tiêu dùng của Mỹ (2010 = 100)\nFRED\nbond yield US\nLãi suất trái phiếu chính phủ 10 năm của MỹFRED\ngold world\nGiá 1 oz vàng quy đổi VND\nBloomberg\noil world\nGiá dầu thế giới WTI\nFRED\ncrb\nChỉ số giá hàng hóa cơ bản\nThomson Reuters\nNguồn: Tổng hợp của nhóm tác giả\nTrong đó: X., ị = 1, n là biến độc lập được thể hiện \ntrong Bảng 1.\nDT là một trong những mô hình học máy phổ biến \ndo khả năng giải thích và hiệu quả của mô hình (Olson, \n2012). Mô hình tạo ra cây trong đó mỗi nút biểu diễn \nmột đặc tính, mỗi nhánh đặc trưng cho một quy luật và \nmỗi lá thể hiện kết quả. Mỗi nút gốc được lựa chọn từ \nhàm thông tin entropy, từ các đặc tính kết hợp cây tạo \nra các nhánh (Breiman và cộng sự, 1984). Quá trình \nnày được lặp lại cho đến khi không thể tiếp tục thực \nhiện việc chia tách được nữa.\nMô hình XGBoost được đề xuất bởi Fiedman và \ncộng sự (2001) để xây dựng các mô hình dự báo tốt hơn \ntừ sự kết hợp các mô hình yếu trước đó nhằm bù đắp \nthiếu sót tro",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_8",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 8,
+        "quote": "\nChất lượng chính sách nợ\nWB\ncpi_us\nChỉ số giá tiêu dùng của Mỹ (2010 = 100)\nFRED\nbond yield US\nLãi "
+      }
+    },
+    {
+      "id": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_9",
+      "text": "hực \nhiện việc chia tách được nữa.\nMô hình XGBoost được đề xuất bởi Fiedman và \ncộng sự (2001) để xây dựng các mô hình dự báo tốt hơn \ntừ sự kết hợp các mô hình yếu trước đó nhằm bù đắp \nthiếu sót trong các mô hình trước. Mô hình XGBoost \nhuấn luyện trình tự từng mô hình để tìm các sai số, mô \nhình sau kết hợp sai số của mô hình trước để xây dựng \nmô hình mới có sai số nhỏ hơn, quá trình cứ lặp lại cho \nđến mô hình cuôì cùng đạt hiệu quả cao nhất.\nĐể đánh giá hiệu quả dự báo của mô hình, các tiêu \nchuẩn sau được sử dụng:\nMSE \nO-, - ÍT’, RMSE =,/-ý (V, -X= 2ỶI V, - z I\nTrong đó: y., ỹ là các giá trị thực và giá trị dự báo tại \nmỗi quan sát. MSE, RMSE, MAE đo lường sự sai khác \ngiữa giá trị thực và giá trị dự báo, do đó mô hình có các \ngiá trị này càng bé càng tốt.\nKẾT QUẢ VÀ THẢO LUẬN\nThống kê mô tả\nDiễn biến giá vàng trong nước, giá vàng thế giới, \ngiá dầu thế giới và lạm phát Việt Nam giai đoạn từ \nnăm 2008 đến 2021 cho thấy có sự tương đồng giữa \nxu hướng tăng của giá vàng trong nước",
+      "citation": {
+        "chunkId": "55a93a35-ee66-4626-8961-4fb2e680e1b3_chunk_9",
+        "documentId": "55a93a35-ee66-4626-8961-4fb2e680e1b3",
+        "chunkIndex": 9,
+        "quote": "hực \nhiện việc chia tách được nữa.\nMô hình XGBoost được đề xuất bởi Fiedman và \ncộng sự (2001) để xâ"
       }
     },
     {
@@ -5132,63 +5512,363 @@
       }
     },
     {
-      "id": "chk_2375_01",
-      "text": "Điều kiện chuyển ngành: 1. Không phải SV năm nhất hoặc năm cuối. 2. Không bị kỷ luật/buộc thôi học. 3. Đạt điểm trúng tuyển của ngành chuyển đến.",
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_0",
+      "text": "Dự báo giá vàng nhìn từ mô hình \nhồi quy tuyến tính và mô hình học máy\nPHAN ANH\n*\n*TS., ”TS., Học viện Ngân hàng\nNgày nhận bài: 01/02/2023; Ngày phản biện: 10/02/2023; Ngày duyệt đăng: 18/02/2023\nTRƯƠNG THỊ THÒY DƯƠNG\n**\nTóm tắt\nNghiên cứu này sử dụng ba mô hĩnh, gồm: hồi quy tuyến tính (LR), cây quyết định (DT) và mô \nhình Extreme Gradient Boosting (Xgboost) để dự đoán giá vàng tại Việt Nam. Kết quả cho \nthấy, mô hĩnh học máy (DT và Xgboost) đều cho kết quả dự báo tốt hơn với các chỉ sô'nhỏ hơn \nso với mô hình LR. Bên cạnh đó, chỉ số giá tiêu dùng của Mỹ, chỉ số giá tiêu dùng của Việt \nNam, chỉ số giá hàng hóa cơ bản, giá vàng và giá dầu thế giới là các thông số đầu vào quan \ntrọng trong dự báo giá vàng Việt Nam thông qua các mô hình học máy.\nTừ khóa: học máy, mô hình hồi quy tuyến tính, dự đoán giá vàng\nSummary\nThis study uses three models including linear regression (LR), decision tree (DT) and Extreme \nGradient Boosting (Xgboost) to predict gold price in Vietnam. The results show t",
       "citation": {
-        "chunkId": "chk_2375_01",
-        "documentId": "doc004",
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_0",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
         "chunkIndex": 0,
-        "quote": "Điều kiện chuyển ngành: 1. Không phải SV năm nhất hoặc năm cuối. 2. Không bị kỷ luật/buộc thôi học. "
+        "quote": "Dự báo giá vàng nhìn từ mô hình \nhồi quy tuyến tính và mô hình học máy\nPHAN ANH\n*\n*TS., ”TS., Học vi"
       }
     },
     {
-      "id": "chk_258_01",
-      "text": "Xếp loại học lực theo điểm tích lũy: Xuất sắc (3.6-4.0), Giỏi (3.2-3.59), Khá (2.5-3.19), Trung bình (2.0-2.49), Yếu (1.0-1.99), Kém (<1.0).",
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_1",
+      "text": "dự đoán giá vàng\nSummary\nThis study uses three models including linear regression (LR), decision tree (DT) and Extreme \nGradient Boosting (Xgboost) to predict gold price in Vietnam. The results show that machine \nlearning models (DT and Xgboost) both give better prediction with smaller indexes than LR \nmodel. In addition, US consumer price index, Vietnam consumer price index, commodity price \nindex, gold price and world oil price are important inputs to forecast gold price in Vietnam \nthrough machine learning models.\nKeywords: machine learning, linear regression model, gold price prediction\nGIỚI THIỆU\nVàng đóng vai trò quan trọng trong hệ thông tiền \ntệ cũng như tài chính. Các ngân hàng trung ương trên \ntoàn cầu duy trì dự trữ vàng để đảm bảo cho những \nngười nắm giữ tiền tệ, tiền của các cổ đông của họ và \ncác chủ nợ nước ngoài. Họ cũng sử dụng vàng như một \nphương tiện để quản lý lạm phát và củng cố vị thế kinh \ntế của đất nước. Dự báo xu hướng của giá vàng sẽ giúp \ních cho các nhà đ",
       "citation": {
-        "chunkId": "chk_258_01",
-        "documentId": "doc001",
-        "chunkIndex": 0,
-        "quote": "Xếp loại học lực theo điểm tích lũy: Xuất sắc (3.6-4.0), Giỏi (3.2-3.59), Khá (2.5-3.19), Trung bình"
-      }
-    },
-    {
-      "id": "chk_258_02",
-      "text": "Cảnh báo kết quả học tập: Thực hiện sau mỗi học kỳ chính. Điều kiện bị cảnh báo: Điểm TB học kỳ < 0.8 (HK đầu) hoặc < 1.0 (các HK sau).",
-      "citation": {
-        "chunkId": "chk_258_02",
-        "documentId": "doc001",
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_1",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
         "chunkIndex": 1,
-        "quote": "Cảnh báo kết quả học tập: Thực hiện sau mỗi học kỳ chính. Điều kiện bị cảnh báo: Điểm TB học kỳ < 0."
+        "quote": "dự đoán giá vàng\nSummary\nThis study uses three models including linear regression (LR), decision tre"
       }
     },
     {
-      "id": "chk_3183_01",
-      "text": "Điều 8 (Sửa đổi): Sinh viên được rút học phần đã đăng ký trong 03 tuần đầu của học kỳ chính hoặc 01 tuần đầu của học kỳ phụ. Học phần rút sẽ nhận điểm R.",
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_10",
+      "text": " kê mô tả\nDiễn biến giá vàng trong nước, giá vàng thế giới, \ngiá dầu thế giới và lạm phát Việt Nam giai đoạn từ \nnăm 2008 đến 2021 cho thấy có sự tương đồng giữa \nxu hướng tăng của giá vàng trong nước với giá vàng \nthế giới, giữa giá vàng trong nước và lạm phát. Tuy \nnhiên, giá vàng thế giới năm 2021 chứng kiến sự thay\nEconomy and Forecast Review\n89\n\nBẢNG 2: THỐNG KÊ MÒ TẢ\nBiến\nmean\nstd\nmin\n25%\n50%\n75%\nmax\ncpi_vn\n139.6224\n28.352\n75.887\n123.701\n144.852\n161.919\n180.062\ner vn\n21133.42 2132.033\n15960\n20778\n21757.5\n22992\n23695\ndeposit rate vn\n7.216235\n3.57738\n3.34\n4.8\n5.25\n9\n17.16\nm2 vn\n5584703\n3310900\n1278398\n2571606 5029103\n8409914 12405120\niip vn\n209.704\n104.511\n70.023\n107.092\n179.674\n318.211\n407.612\ngold vn\n39.19683 12.43336\n16.75 34.26725\n36.615\n44.7275\n70.2\ngold world eq\n35.67471\n9.886\n14.4337\n30.613\n34.525\n42.406\n55.267\npolitical stab vn\n0.124\n0.122\n-0.09\n0.03\n0.155\n0.23\n0.27\npolitical_stab_world\n0.059\n0.034\n0.01\n0.04\n0.06\n0.07\n0.14\ncpia budget\n3.643\n0.227\n3.5\n3.5\n3.5\n4\n4\ncpia trade\n",
       "citation": {
-        "chunkId": "chk_3183_01",
-        "documentId": "doc002",
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_10",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 10,
+        "quote": " kê mô tả\nDiễn biến giá vàng trong nước, giá vàng thế giới, \ngiá dầu thế giới và lạm phát Việt Nam g"
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_11",
+      "text": ".4337\n30.613\n34.525\n42.406\n55.267\npolitical stab vn\n0.124\n0.122\n-0.09\n0.03\n0.155\n0.23\n0.27\npolitical_stab_world\n0.059\n0.034\n0.01\n0.04\n0.06\n0.07\n0.14\ncpia budget\n3.643\n0.227\n3.5\n3.5\n3.5\n4\n4\ncpia trade\n3.829\n0.240\n3.5\n3.5\n4\n4\n4\ncpia public admin\n3.464\n0.129\n3\n3.5\n3.5\n3.5\n3.5\ncpia debt policy\n3.75\n0.251\n3.5\n3.5\n3.75\n4\n4\ncpi_us\n136.786\n310.183\n-1545.98\n-32.6961\n139.454\n344.411\n813.395\nbond yield US\n2.380\n0.803\n0.62\n1.8075\n2.325\n2.89\n4.1\ngold world\n1350.112 279.7808\n725.05 1183.438\n1295.64 1573.228\n1974.69\noil world\n71.1661\n23.681\n19.23\n50.4925\n68.495\n91.955\n139.96\ncrb\n87.727\n23.555 44.39885\n67.844\n82.477\n104.855\n163 765\nHÌNH 1: HỆ SỐ TƠƠNG QGAN GIỮA CÁC BIÊN\nrtES ['IB [Jfl\n[jaai-raBfrH\nEX£ 0.46 -0.07\n-0 O3|EEL 0 18 1□LE rasHP.170.33\ncpi vn -□EQ EEQ EE3 FU?rjXTi\nẸSỊỊrnm o 01\nỊ-O 02 0 48 0 08\n1‘ta. LỊiơơ ILL\nFin Wfgii\nEli Eli;\nooo\n0.02 0 40 0 08 ị\nGE3EE? EE?\ndeposit_rate_vn -\nEEE LX£ EEEI \nFIEF t»»>| ['E-U \nIl\n□EẼO 37 049 040 EXSSES\nEEQ FBI EEQ Fired F*Ad\n Fifin\n0.01\n0 15\n0.14 □EE\n001 \n-0 03",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_11",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 11,
+        "quote": ".4337\n30.613\n34.525\n42.406\n55.267\npolitical stab vn\n0.124\n0.122\n-0.09\n0.03\n0.155\n0.23\n0.27\npolitical"
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_12",
+      "text": "ta. LỊiơơ ILL\nFin Wfgii\nEli Eli;\nooo\n0.02 0 40 0 08 ị\nGE3EE? EE?\ndeposit_rate_vn -\nEEE LX£ EEEI \nFIEF t»»>| ['E-U \nIl\n□EẼO 37 049 040 EXSSES\nEEQ FBI EEQ Fired F*Ad\n Fifin\n0.01\n0 15\n0.14 □EE\n001 \n-0 03\n1-0.13 i\n0.30\nSL \nRFfi\n0.03\n0 14\n0 09 EE\nI«1M1\n0.18 ntofil\nEESĨ3S5 \n0.49 EE?\nEES\n2X1\nSEE\ngoldworldeq -| \npolitical_stab_vn 4 \npoliticai_stab_world -|\nnrrni rwa nrnn -0.37 EQ3 pipa mn \nyr gggryy. 049 rwiiprr\nQSE ESE \nO 4O Ĩ«K--Ị-! MTV1\nẸỊỊỊ\nEEE ULL \n0 36 \n0.43\n0.42\n□EE\n-0.02\n0 29\n-0.09\n0.02| \nOOl 1 \n0.02 1\nl»t-TI \nE2LE\no 18 1 \no 09 \n0.16\n□EE \n0.40 \nBE3\nEEQ -\n0.37 0.26\nEEE 0.32\n-0.35 \n0 34 \ntt44\ncpiabudqetquahty -| \ncpia public admin -\nr?EE2 t'X-&! \n0 46 t»i:H f»rnn \n0.070.01 000\nEIE EEt! EES Ỉ3EE 0 36 0 43\nEESESĐQIEI 0 42\n0.01 0 15 0 14 0.02 0.29 0 09\nOE3 \nEEE \n0.18\nSEE\n-0.21\n018\n-0.21\nEBB -0.28\no 02\n-0 01\n0.03\no 25 0 03 1 \n029 0 04 I \n0.11 0 03\nQEQ \nQEE \n0.01\nEE- 0 37\n0 21 idE'Sd\n0.05 0.310.17\ncpia debt policy \nEE£ i'lri.- ESS \nSEE\n048 \nEES\no 28ÍW<ĨI1ị 0 02 o 39 0 09 F ‘7: -0 23l5WUITl\nlu",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_12",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 12,
+        "quote": "ta. LỊiơơ ILL\nFin Wfgii\nEli Eli;\nooo\n0.02 0 40 0 08 ị\nGE3EE? EE?\ndeposit_rate_vn -\nEEE LX£ EEEI \nFIE"
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_13",
+      "text": "28\no 02\n-0 01\n0.03\no 25 0 03 1 \n029 0 04 I \n0.11 0 03\nQEQ \nQEE \n0.01\nEE- 0 37\n0 21 idE'Sd\n0.05 0.310.17\ncpia debt policy \nEE£ i'lri.- ESS \nSEE\n048 \nEES\no 28ÍW<ĨI1ị 0 02 o 39 0 09 F ‘7: -0 23l5WUITl\nlunar_tet -o 030.02 o 02 O.Ol o 030.13 -O 02 OOl 0 02 o 02-0.01 003 0 02 EEQ a 03 0 22 003 o 02 0 02 0 01\ncovidl9_cnsis\n048 0 40 0.38 EEa \n.25 0.29 0.11 Ot39\no 18 0 08 0 08 o 03 0.14 0 09 0 18 -O 09 o 16 o 03 0 04 0 03 o 09\nOOJ Qjjg 0 18 M\n*l\nFyF|o 27 0 31\n0 22 o 18 UJW '01 0 20 0 22 0 16\nbond_yield_us -|Lil\ni'XTU \npra I'XTI MT-y 0 40 : M \nFl£g OOI\n003 1\n0011\nEEE O4& li-.Q\ngold world Llk EEJEEJo 18 nm 0 49 1KB 4>»7QQJ-irE 0.21 -0.05 41.23 o 02 pn o 20 E»J? \n1 03 o 16\n«1 world -0.17\nnrn LX-i. ur o 19 0 26 0 32 037 FXUO31CTH o 02-0 27 0 22 049 -0 0 3f»glEPT-\nơb -o 33\nFIR? \ni'tff EEE-0.35 0 34 0 44QE3 Mfrfa 23 17\n0 01 o 31 0 16 fair J -Pin\n-025\n- 0 00\n-O 2S\ní I ■' ị: í í Ị ị: Ị. 11 J. I ■I. ỉ' ỉ . ỉ ’ \nỉ »ỉ I I ị i ’ -\ní ê ®\nBẢNG 3: GIÁ TRỊ ĐÁNH GIÁ\nMô hình\nMSE\nRMSE\nMAE\nLR\n2.496\n1.579\n1.1667\nDT",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_13",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 13,
+        "quote": "28\no 02\n-0 01\n0.03\no 25 0 03 1 \n029 0 04 I \n0.11 0 03\nQEQ \nQEE \n0.01\nEE- 0 37\n0 21 idE'Sd\n0.05 0.310"
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_14",
+      "text": "QE3 Mfrfa 23 17\n0 01 o 31 0 16 fair J -Pin\n-025\n- 0 00\n-O 2S\ní I ■' ị: í í Ị ị: Ị. 11 J. I ■I. ỉ' ỉ . ỉ ’ \nỉ »ỉ I I ị i ’ -\ní ê ®\nBẢNG 3: GIÁ TRỊ ĐÁNH GIÁ\nMô hình\nMSE\nRMSE\nMAE\nLR\n2.496\n1.579\n1.1667\nDT\n1.9807\n1.407\n0.892\nXgboost\n1.7404\n1.319\n0.896\nNguồn: Tổng hợp của nhóm tác giả\nđổi chiều liên tục, giá vàng trong nước cũng thể hiện \nsự giằng co nhưng với mức độ biến động ít hơn, nguyên \nnhân gây ra sự biến động này đến từ ảnh hưởng của đại \ndịch Covid-19 và chính sách tiền tệ của các quốc gia. \nCó sự khác biệt không lớn giữa giá vàng trong nước với \ngiá dầu thế giới, khi chứng kiến sự giảm giá dầu năm \n2020 và bật tăng vào năm 2021. Diễn biến tỷ giá USD \nvà VND, cung tiền, chỉ số sản xuất công nghiệp và lãi \nsuất tiền gửi của Việt Nam giai đoạn 2008-2021 cho \nthấy, lãi suất tiền gửi có xu hướng giảm từ năm 2012, \ntỷ giá có xu hướng tăng trong thời kỳ dài tuy nhiên có \nsự ổn định đi ngang năm 2021 và 2022.\nBảng 2 biểu diễn thống kê mô tả của các biến độc \nlập và biến phụ thuộc trong gia",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_14",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 14,
+        "quote": "QE3 Mfrfa 23 17\n0 01 o 31 0 16 fair J -Pin\n-025\n- 0 00\n-O 2S\ní I ■' ị: í í Ị ị: Ị. 11 J. I ■I. ỉ' ỉ "
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_15",
+      "text": "hướng giảm từ năm 2012, \ntỷ giá có xu hướng tăng trong thời kỳ dài tuy nhiên có \nsự ổn định đi ngang năm 2021 và 2022.\nBảng 2 biểu diễn thống kê mô tả của các biến độc \nlập và biến phụ thuộc trong giai đoạn nghiên cứu cho \nthấy sự biến động mạnh của giá vàng, giá dầu trong \nnước và trên thế giới, chỉ sô' CPI của Mỹ và tỷ giá \nđồng USD so với VND thể hiện ở độ lệch tiêu chuẩn.\nDữ liệu sau khi được chia ngẫu nhiên \nthành hai tập huấn luyện và tập kiểm tra \ntheo tỷ lệ 75% và 25% sau khi đã làm \nsạch với mục đích để huấn luyện mô \nhình và kiểm tra để đánh giá hiệu quả \ncủa mô hình.\nCó sự tương quan cao giữa các nhóm \nbiến như tỷ giá USD/VND với chỉ số giá \ntiêu dùng, chất lượng quản lý ngân sách \nvà chất lượng chính sách thương mại, \ncung tiền và chỉ số giá tiêu dùng, chỉ số \ngiá tiêu dùng và chỉ số sản xuất công \nnghiệp, giữa giá dầu và chỉ số hàng hóa \ncơ bản. Tuy nhiên, ttong mô hình hồi quy, \nnhóm tác giả vẫn sử dụng tất cả các biến \nđể so sánh hiệu quả xử lý tương quan cao \ncủa mô hìn",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_15",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 15,
+        "quote": "hướng giảm từ năm 2012, \ntỷ giá có xu hướng tăng trong thời kỳ dài tuy nhiên có \nsự ổn định đi ngang"
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_16",
+      "text": "chỉ số sản xuất công \nnghiệp, giữa giá dầu và chỉ số hàng hóa \ncơ bản. Tuy nhiên, ttong mô hình hồi quy, \nnhóm tác giả vẫn sử dụng tất cả các biến \nđể so sánh hiệu quả xử lý tương quan cao \ncủa mô hình học máy so với LR (Hình 1).\nKết quả nghiên cứu\nDữ liệu về giá vàng và các biến giải \nthích sau khi được chia ngẫu nhiên thành \nhai tập huấn luyện và kiểm tra được sử \ndụng trong hai giai đoạn: giai đoạn thứ \nnhất huấn luyện mô hình từ tập dữ liệu \nhuấn luyện với ba phương pháp là LR, \nDT và Xgboost; giai đoạn thứ hai dự báo \nsử dụng mô hình đã được huấn luyện trên \ntập dữ liệu kiểm tra. Các giá trị đánh giá \nmô hình trên tập kiểm tra thể hiện trong \nBảng 3.\nBảng 3 cho thấy, cả hai mô hình DT \nvà Xgboost đều cho kết quả dự báo tốt \nhơn với các chỉ số nhỏ hơn so với LR. Mô \nhình Xgboost cho kết quả dự báo chính \nxác nhất với sai số 1.7404 so với DT và \nLR lần lượt là 1.9807 và 2.496. Có thể \nmột sô' biến độc lập trong mô hình có \ntương quan cao với nhau làm ảnh hưởng \nđến hiệu quả của mô h",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_16",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 16,
+        "quote": "chỉ số sản xuất công \nnghiệp, giữa giá dầu và chỉ số hàng hóa \ncơ bản. Tuy nhiên, ttong mô hình hồi "
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_17",
+      "text": "t quả dự báo chính \nxác nhất với sai số 1.7404 so với DT và \nLR lần lượt là 1.9807 và 2.496. Có thể \nmột sô' biến độc lập trong mô hình có \ntương quan cao với nhau làm ảnh hưởng \nđến hiệu quả của mô hình LR, tuy nhiên, \nmô hình DT và Xgboost xử lý tốt hơn \nhiện tượng này. Do đó, mô hình Xgboost \ncó thể được sử dụng để dự báo giá vàng \ntrong thời gian kê' tiếp.\nTừ kết quả dự báo đánh giá mô hình \nXgboost tốt nhất, nghiên cứu thực hiện \nđánh giá tầm quan trọng của các biến \ntrong mô hình (Hình 2). Các biến: cpi_us, \ngols_world, cpi_vn, crb và giá dầu đóng \nvai trò quan trọng nhất trong dự báo giá \nvàng, hay nói cách khác, các biến này \ncó tác động đến giá vàng trong nước. \nTiếp theo sau là các biến đại diện cho \nchỉ sô' sản xuất công nghiệp Việt Nam, \nlãi suất trái phiếu chính phủ 10 năm của \nMỹ, cung tiền, tỷ giá và mức độ ổn định \nchính trị của Việt Nam và trên thê' giới. \nMặc dù các sự kiện ngẫu nhiên như đại \ndịch Covid-19 làm ảnh hưởng đến kinh \ntê' trong và ngoài nước, có thể gây r",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_17",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 17,
+        "quote": "t quả dự báo chính \nxác nhất với sai số 1.7404 so với DT và \nLR lần lượt là 1.9807 và 2.496. Có thể "
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_18",
+      "text": " \nMỹ, cung tiền, tỷ giá và mức độ ổn định \nchính trị của Việt Nam và trên thê' giới. \nMặc dù các sự kiện ngẫu nhiên như đại \ndịch Covid-19 làm ảnh hưởng đến kinh \ntê' trong và ngoài nước, có thể gây ra suy \n90\nKinh tế và Dự báo\n\nKinhjế\nvà Dự báo\nthoái đến nền kinh tế, nhưng chưa thấy \nbằng chứng thể hiện vai trò quan trọng \ncủa nó trong sự thay đổi của giá vàng. \nĐiều này có thể giải thích bởi giá vàng ít \nbị biến động trong thời gian ngắn.\nKẾT LUẬN\nCác mô hình học máy được chỉ ra là \ncó hiệu quả tốt hơn so với các mô hình \nthông kê truyền thông trong nhiều lĩnh \nvực khác nhau, ưu điểm của mô hình \nhọc máy không đòi hỏi chặt chẽ về \nđiều kiện của dữ liệu và mốì quan hệ \ngiữa biến độc lập với biến phụ thuộc, \ndo đó khả năng ứng dụng rộng hơn và \nlinh hoạt hơn. Trong bài nghiên cứu, mô \nhình DT và Xgboost cho kết quả vượt \ntrội so với mô hình LR trong dự báo xu \nhướng của giá vàng Việt Nam. Đồng \nthời, chỉ ra các nhân tô' tác động đến giá \nvàng bằng cách chỉ ra tầm quan trọng \ncủa các đặ",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_18",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 18,
+        "quote": " \nMỹ, cung tiền, tỷ giá và mức độ ổn định \nchính trị của Việt Nam và trên thê' giới. \nMặc dù các sự "
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_19",
+      "text": " DT và Xgboost cho kết quả vượt \ntrội so với mô hình LR trong dự báo xu \nhướng của giá vàng Việt Nam. Đồng \nthời, chỉ ra các nhân tô' tác động đến giá \nvàng bằng cách chỉ ra tầm quan trọng \ncủa các đặc tính trong mô hình hồi quy, \ntừ đó giúp các nhà nghiên cứu, đầu tư có \ncác đánh giá phù hợp về sự biến động \ncủa vàng cũng như có các danh mục đầu \ntư hiệu quả.\nHÌNH 2: TẦM QGAN TRỌNG CỎA CÁC NHÂN Tố \nTRONG MÔ HÌNH XGBOOST\nTuy nhiên, để tăng hiệu quả dự báo của mô hình \nhọc máy, cần bổ sung và cập nhật thông tin, số liệu \nliên tục để nắm bắt tốt được sự thay đổi hoặc chuyến \nbiến của thị trường. Sẽ có trường hợp đòi hỏi xây dựng \nlại mô hình dự báo để phù hợp hơn với tình hình mới. \nCần cập nhật và phân tích các thông tin có liên quan \nđến giá vàng mà mô hình không thể lượng hóa được \nđể có sự điều chỉnh phù hợp, như: thông tin về thuế, \nhạn ngạch, các chính sách có liên quan... và thông tin \nvề thị trường chứng khoán, bất động sản. Tuy không \nthể đưa vào mô hình học máy để tính toán sô'",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_19",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 19,
+        "quote": " DT và Xgboost cho kết quả vượt \ntrội so với mô hình LR trong dự báo xu \nhướng của giá vàng Việt Nam"
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_2",
+      "text": "cổ đông của họ và \ncác chủ nợ nước ngoài. Họ cũng sử dụng vàng như một \nphương tiện để quản lý lạm phát và củng cố vị thế kinh \ntế của đất nước. Dự báo xu hướng của giá vàng sẽ giúp \ních cho các nhà đầu tư và các nhà quản lý tiền tệ trong \nviệc lựa chọn thời điểm cung ứng mặt hàng này.\nHọc máy (machine learning) là một loại trí tuệ nhân \ntạo cho phép các ứng dụng của phần mềm trở nên chính \nxác hơn trong việc dự đoán kết quả. Các thuật toán của \nhọc máy sử dụng thông tin lịch sử làm đầu vào để dự \nbáo tốc độ đầu ra mới nhất. Kỹ thuật học máy đóng vai \ntrò quan trọng trong việc dự đoán giá vàng. Nhiều kỹ \nthuật học máy khác nhau như: máy vectơ hỗ trợ (SVM), \nrừng ngẫu nhiên (RF), cây quyết định (DT)... đã được \nsử dụng trong các nghiên cứu trước đây để dự đoán tỷ \nlệ vàng và cho kết quả chính xác (Nghiên cứu sử dụng \ncách viết sô thập phân theo chuẩn quốc tế).\nCơ SỞ LÝ THUYẾT\nVàng là tài sản đảm bảo phòng ngừa rủi ro và tối đa \nhóa danh mục đầu tư, đặc biệt là trong giai đoạn kinh tế\nsu",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_2",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 2,
+        "quote": "cổ đông của họ và \ncác chủ nợ nước ngoài. Họ cũng sử dụng vàng như một \nphương tiện để quản lý lạm p"
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_20",
+      "text": "sự điều chỉnh phù hợp, như: thông tin về thuế, \nhạn ngạch, các chính sách có liên quan... và thông tin \nvề thị trường chứng khoán, bất động sản. Tuy không \nthể đưa vào mô hình học máy để tính toán sô' liệu cụ \nthể, nhưng có thể tránh cho việc sai lầm trong nhận \nđịnh lựa chọn kết quả dự báo.Q\nTÀI LIỆU THAM KHẢO\n1. Breiman, L., Friedman, J., Stone, c. J., and Olshen, R. A. (1984), Classification and regression \ntrees, CRC press.\n2. Fortune, J. N. (1987), The inflation rate of the price of gold, expected prices and interest \nrates, Journal of Macroeconomics, 9(1), 71-82.\n3. Hiền, V. c., Khôi, p. Đ. (2019). Mối quan hệ phụ thuộc giữa giá vàng và tỷ giá ngoại tệ ở Việt \nNam, Tạp chí Khoa học Trường Đại học cần Thơ, 55(CĐ Kinh tế), 31-41.\n4. Hu, Y., Ni, J., Wen, L. (2020), A hybrid deep learning approach by integrating LSTM- \nANN networks with GARCH model for copper price volatility prediction, Physica A: Statistical \nMechanics and its Applications, 557.\n5. Ismail, z., Yahya, A., Shabri, A.",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_20",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 20,
+        "quote": "sự điều chỉnh phù hợp, như: thông tin về thuế, \nhạn ngạch, các chính sách có liên quan... và thông t"
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_21",
+      "text": "g approach by integrating LSTM- \nANN networks with GARCH model for copper price volatility prediction, Physica A: Statistical \nMechanics and its Applications, 557.\n5. Ismail, z., Yahya, A., Shabri, A. (2009), Forecasting gold prices using multiple linear \nregression method, American Journal of Applied Sciences, 6(8).\n6. Jianwei, E., Ye, J., Jin, H. (2019), A novel hybrid model on the prediction of time series and \nits application for the gold price analysis and forecasting, Physica A: Statistical Mechanics and its \nApplications, 527.\n7. Navin, Dr. G. Vadivu (2015), Big Data Analytics for Gold Price Forecasting Based on \nDecision Tree Algorithm and Support Vector Regression (SVR), International Journal of Science \nand Research, March 2015, 2026-2030.\n8. Olson, D. L., Deien, D., Meng, Y. (2012), Comparative analysis of data mining methods for \nbankruptcy prediction, Decision Support Systems, 52(2), 464-473.\n9. Parisi, A., Parisi, F., Diaz, D. (2008), Forecasting gold price changes: Rolli",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_21",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 21,
+        "quote": "g approach by integrating LSTM- \nANN networks with GARCH model for copper price volatility predictio"
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_22",
+      "text": "12), Comparative analysis of data mining methods for \nbankruptcy prediction, Decision Support Systems, 52(2), 464-473.\n9. Parisi, A., Parisi, F., Diaz, D. (2008), Forecasting gold price changes: Rolling and recursive \nneural network models, Journal of Multinational financial management, 18(5), 477-487.\n10. Sarangi, p., Dublish, s. (2013), Prediction of gold bullion return using GARCH family \nand artificial neural network models, Asian Journal of Research in Business Economics and \nManagement, 3(10), 217-230.\n11. Wen, F., Yang, X., Gong, X., Lai, K. K. (2017), Multi-scale volatility feature analysis and \nprediction of gold price, International Journal of Information Technology & Decision Making, 16(01), \n205-223.\nEconomy and Forecast Review\n91\n\n",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_22",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 22,
+        "quote": "12), Comparative analysis of data mining methods for \nbankruptcy prediction, Decision Support System"
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_3",
+      "text": "nh xác (Nghiên cứu sử dụng \ncách viết sô thập phân theo chuẩn quốc tế).\nCơ SỞ LÝ THUYẾT\nVàng là tài sản đảm bảo phòng ngừa rủi ro và tối đa \nhóa danh mục đầu tư, đặc biệt là trong giai đoạn kinh tế\nsuy thoái, nên đã thu hút được rất nhiều \nnhà nghiên cứu quan tâm. Sự thay đổi của \ngiá vàng có liên quan đến sự phát triển \ncủa nền kinh tế thế giới, việc xây dựng \ncác chính sách, tâm lý của các nhà đầu \ntư... (Wen và cộng sự, 2017). Các yếu tố \nnày gây ra sự biến động của giá vàng và \nsự khó khăn trong đánh giá xu hướng biến \nđộng của nó. Một số phương pháp dự báo \nvàng truyền thống có thể kể đến, như: LR, \nARIMA, ARCH và GARCH. Theo đó, \ngiá vàng được xác định bởi các yếu tố như \nđồng Bảng Anh, đồng Đô la Mỹ thường \nxuyên suy yếu, khủng hoảng tín dụng \ntrên toàn thế giới, nhu cầu tăng cao từ các \nnhà đầu tư tổ chức và ngân hàng trung \nương, bất ổn chính trị, tấn công khủng \nbố... Tuy nhiên, với sự phát triển của trí \ntuệ nhân tạo và các phương pháp tính toán \nthông minh, các phương pháp ",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_3",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 3,
+        "quote": "nh xác (Nghiên cứu sử dụng \ncách viết sô thập phân theo chuẩn quốc tế).\nCơ SỞ LÝ THUYẾT\nVàng là tài "
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_4",
+      "text": " các \nnhà đầu tư tổ chức và ngân hàng trung \nương, bất ổn chính trị, tấn công khủng \nbố... Tuy nhiên, với sự phát triển của trí \ntuệ nhân tạo và các phương pháp tính toán \nthông minh, các phương pháp học máy, \nnhư: SVM, mạng nhân tạo (ANN), DT, \nXgboost, RF, mạng bộ nhớ ngắn, dài hạn \nđã được sử dụng để dự báo sự thay đổi giá \nvàng (Parisi và cộng sự 2008; Jianwei và \nJin, 2019; Hu và Ni, 2020.\nNavin và Vadivu đã phát triển một \nmô hình dự báo tỷ giá vàng dựa trên hồi\n88\nKinh tế và Dự báo\n\nKinh tê'\n'ÍI Dự báo\nquy véc tơ hỗ trợ (SVR) và DT. Nhóm \ntác giả nhận thây rằng, SVR là phương \npháp tốt nhất cho số lượng lớn tập dữ \nliệu và DT để lựa chọn thuộc tính tương \nứng.\nBằng phương pháp kết hợp giữa \nphương pháp thành phần ICA và mạng \nnơ rơn GRUNN, Jianwei và Jin (2019) \nchứng minh rằng, sự biến động của giá \nvàng sẽ bị gián đoạn bởi các xu hướng \ndài hạn, các yếu tố lặp lại theo chu kỳ \nvà các sự kiện ngẫu nhiên. Điều này thể \nhiện rằng, giá vàng sẽ chịu ảnh hưởng \nbởi các sự kiện ngẫu ",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_4",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 4,
+        "quote": " các \nnhà đầu tư tổ chức và ngân hàng trung \nương, bất ổn chính trị, tấn công khủng \nbố... Tuy nhiên"
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_5",
+      "text": "biến động của giá \nvàng sẽ bị gián đoạn bởi các xu hướng \ndài hạn, các yếu tố lặp lại theo chu kỳ \nvà các sự kiện ngẫu nhiên. Điều này thể \nhiện rằng, giá vàng sẽ chịu ảnh hưởng \nbởi các sự kiện ngẫu nhiên như đại dịch \nhay tình hình chính trị.\nNghiên cứu của Hiền và Khôi (2019) \nbằng phương pháp copula đã chỉ ra rằng, \nvàng và tỷ giá ngoại tệ không có mốì liên \nhệ trong trường hợp thị trường ổn định, \nnhưng vàng và ngoại tệ cần kết nốì để \ntạo kênh trú ẩn an toàn trong giai đoạn \nthị trường đầy biến động.\nTheo quan điểm của Ismail và cộng sự \n(2009), giá vàng ít bị biến động trong thời \ngian nhất định so với các loại hàng hóa \nkhác vì nguồn cung vàng được tích lũy \ntrong khoảng thời gian dài. sử dụng mô \nhình LR để chỉ ra các yếu tố tác động đến \nvàng, các tác giả đã xây dựng được mô \nhình dự báo với độ chính xác đến 96.92%.\nSarangi và Dublish (2013) so sánh \nhiệu suất dự báo của GARCH và mô \nhình học máy, kết quả chỉ ra hiệu suất dự \nbáo vượt trội hơn của mô hình học máy \nso với GARC",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_5",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 5,
+        "quote": "biến động của giá \nvàng sẽ bị gián đoạn bởi các xu hướng \ndài hạn, các yếu tố lặp lại theo chu kỳ \nv"
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_6",
+      "text": "h dự báo với độ chính xác đến 96.92%.\nSarangi và Dublish (2013) so sánh \nhiệu suất dự báo của GARCH và mô \nhình học máy, kết quả chỉ ra hiệu suất dự \nbáo vượt trội hơn của mô hình học máy \nso với GARCH.\nDữ liệu nghiên cứu\nNghiên cứu sử dụng dữ liệu theo tháng \ntừ năm 2008 đến 2021. Các biến sử dụng \ntrong mô hình được miêu tả ở Bảng 1.\nNgoài ra, để thể hiện các sự kiện \nngẫu nhiên xảy ra trong thời kỳ nghiên \ncứu, nhóm tác giả sử dụng hai biến giả \nlunar_tet và covidl9-crisis nhận giá trị là \n0 và 1 trong mô hình.\nPhương pháp nghiên cứu\nNghiên cứu thực hiện ba mô hình \ngồm: LR, DT và Xgboost. Mô hình LR \nđược sử dụng để đánh giá các giá trị \nthực dựa trên các biến liên tục. Mô hình \nLR cũng dùng để thiết lập mối quan hệ \ngiữa các biến phụ thuộc cũng như độc \nlập bằng cách đưa ra một giải pháp thích \nhợp. Với biến phụ thuộc là giá vàng, mô \nhình LR thiết lập mối quan hệ giữa giá \nvàng và các yếu tô\" tác động bởi phương \ntrình hồi quy:\ngoldvn = /}„ + xt + e\nBẢNG 1: MÔ TẢ CÁC BIẾN TRONG N",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_6",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 6,
+        "quote": "h dự báo với độ chính xác đến 96.92%.\nSarangi và Dublish (2013) so sánh \nhiệu suất dự báo của GARCH "
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_7",
+      "text": "háp thích \nhợp. Với biến phụ thuộc là giá vàng, mô \nhình LR thiết lập mối quan hệ giữa giá \nvàng và các yếu tô\" tác động bởi phương \ntrình hồi quy:\ngoldvn = /}„ + xt + e\nBẢNG 1: MÔ TẢ CÁC BIẾN TRONG NGHIÊN cứa\nBiến\nMô tả\nNguồn\ncpi vn\nChỉ số giá tiêu dùng của Việt Nam (2010 = 100) Tổng cục Thông kê\ner vn\nTỷ giá USD/VND\nIMF\ndeposit_rate_vn\nLãi suất tiền gửi của Việt Nam\nIMF\nm2 vn\nCung tiền M2 của Việt Nam\nIMF\niip_vn\nChỉ số sản xuất công nghiệp của Việt Nam \n(2010= 100)\nIMF\ngold world_eq\nGiá vàng thế giới quy đổi VND\nBullion Rates\npolitical stab vn\nChỉ số ổn định chính trị Việt Nam\nWB\npolitical stab world Chỉ số ổn định chính trị thế giói\nWB\ncpia budget\nChất lượng quản lý ngân sách\nWB\ncpia trade\nChất lượng chính sách thương mại\nWB\ncpia public admin\nChất lượng quản trị công\nWB\ncpia debt policy\nChất lượng chính sách nợ\nWB\ncpi_us\nChỉ số giá tiêu dùng của Mỹ (2010 = 100)\nFRED\nbond yield US\nLãi suất trái phiếu chính phủ 10 năm của MỹFRED\ngold world\nGiá 1 oz vàng quy đổi VND\nBloomberg\noil world",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_7",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 7,
+        "quote": "háp thích \nhợp. Với biến phụ thuộc là giá vàng, mô \nhình LR thiết lập mối quan hệ giữa giá \nvàng và "
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_8",
+      "text": "\nChất lượng chính sách nợ\nWB\ncpi_us\nChỉ số giá tiêu dùng của Mỹ (2010 = 100)\nFRED\nbond yield US\nLãi suất trái phiếu chính phủ 10 năm của MỹFRED\ngold world\nGiá 1 oz vàng quy đổi VND\nBloomberg\noil world\nGiá dầu thế giới WTI\nFRED\ncrb\nChỉ số giá hàng hóa cơ bản\nThomson Reuters\nNguồn: Tổng hợp của nhóm tác giả\nTrong đó: X., ị = 1, n là biến độc lập được thể hiện \ntrong Bảng 1.\nDT là một trong những mô hình học máy phổ biến \ndo khả năng giải thích và hiệu quả của mô hình (Olson, \n2012). Mô hình tạo ra cây trong đó mỗi nút biểu diễn \nmột đặc tính, mỗi nhánh đặc trưng cho một quy luật và \nmỗi lá thể hiện kết quả. Mỗi nút gốc được lựa chọn từ \nhàm thông tin entropy, từ các đặc tính kết hợp cây tạo \nra các nhánh (Breiman và cộng sự, 1984). Quá trình \nnày được lặp lại cho đến khi không thể tiếp tục thực \nhiện việc chia tách được nữa.\nMô hình XGBoost được đề xuất bởi Fiedman và \ncộng sự (2001) để xây dựng các mô hình dự báo tốt hơn \ntừ sự kết hợp các mô hình yếu trước đó nhằm bù đắp \nthiếu sót tro",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_8",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 8,
+        "quote": "\nChất lượng chính sách nợ\nWB\ncpi_us\nChỉ số giá tiêu dùng của Mỹ (2010 = 100)\nFRED\nbond yield US\nLãi "
+      }
+    },
+    {
+      "id": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_9",
+      "text": "hực \nhiện việc chia tách được nữa.\nMô hình XGBoost được đề xuất bởi Fiedman và \ncộng sự (2001) để xây dựng các mô hình dự báo tốt hơn \ntừ sự kết hợp các mô hình yếu trước đó nhằm bù đắp \nthiếu sót trong các mô hình trước. Mô hình XGBoost \nhuấn luyện trình tự từng mô hình để tìm các sai số, mô \nhình sau kết hợp sai số của mô hình trước để xây dựng \nmô hình mới có sai số nhỏ hơn, quá trình cứ lặp lại cho \nđến mô hình cuôì cùng đạt hiệu quả cao nhất.\nĐể đánh giá hiệu quả dự báo của mô hình, các tiêu \nchuẩn sau được sử dụng:\nMSE \nO-, - ÍT’, RMSE =,/-ý (V, -X= 2ỶI V, - z I\nTrong đó: y., ỹ là các giá trị thực và giá trị dự báo tại \nmỗi quan sát. MSE, RMSE, MAE đo lường sự sai khác \ngiữa giá trị thực và giá trị dự báo, do đó mô hình có các \ngiá trị này càng bé càng tốt.\nKẾT QUẢ VÀ THẢO LUẬN\nThống kê mô tả\nDiễn biến giá vàng trong nước, giá vàng thế giới, \ngiá dầu thế giới và lạm phát Việt Nam giai đoạn từ \nnăm 2008 đến 2021 cho thấy có sự tương đồng giữa \nxu hướng tăng của giá vàng trong nước",
+      "citation": {
+        "chunkId": "79491541-ca16-4cb3-9589-51904f35d37f_chunk_9",
+        "documentId": "79491541-ca16-4cb3-9589-51904f35d37f",
+        "chunkIndex": 9,
+        "quote": "hực \nhiện việc chia tách được nữa.\nMô hình XGBoost được đề xuất bởi Fiedman và \ncộng sự (2001) để xâ"
+      }
+    },
+    {
+      "id": "chk_qc_001",
+      "text": "Điều 1.1 & 1.2: Quy chế này cụ thể hóa Thông tư 08/2021/TT-BGDĐT, áp dụng cho người học, giảng viên và cán bộ tham gia đào tạo trình độ đại học tại Trường Đại học Sài Gòn.",
+      "citation": {
+        "chunkId": "chk_qc_001",
+        "documentId": "doc_258",
         "chunkIndex": 0,
-        "quote": "Điều 8 (Sửa đổi): Sinh viên được rút học phần đã đăng ký trong 03 tuần đầu của học kỳ chính hoặc 01 "
+        "quote": "Điều 1.1 & 1.2: Quy chế này cụ thể hóa Thông tư 08/2021/TT-BGDĐT, áp dụng cho người học, giảng viên "
       }
     },
     {
-      "id": "chk_3183_02",
-      "text": "Phân mức điểm chữ mới: A (8.5-10), B+ (7.8-8.4), B (7.0-7.7), C+ (6.3-6.9), C (5.5-6.2), D+ (4.8-5.4), D (4.0-4.7). Điểm F là dưới 4.0.",
+      "id": "chk_qc_002",
+      "text": "Điều 2.1 & 2.2: Chương trình đào tạo (CTĐT) xây dựng theo tín chỉ, gồm các học phần bắt buộc và tự chọn. Chuẩn đầu ra áp dụng chung cho mọi hình thức đào tạo. Người đã tốt nghiệp trình độ khác có thể được công nhận hoặc chuyển đổi tín chỉ.",
       "citation": {
-        "chunkId": "chk_3183_02",
-        "documentId": "doc002",
+        "chunkId": "chk_qc_002",
+        "documentId": "doc_258",
         "chunkIndex": 1,
-        "quote": "Phân mức điểm chữ mới: A (8.5-10), B+ (7.8-8.4), B (7.0-7.7), C+ (6.3-6.9), C (5.5-6.2), D+ (4.8-5.4"
+        "quote": "Điều 2.1 & 2.2: Chương trình đào tạo (CTĐT) xây dựng theo tín chỉ, gồm các học phần bắt buộc và tự c"
       }
     },
     {
-      "id": "chk_810_01",
-      "text": "Điều kiện học chương trình thứ hai: Đã kết thúc năm thứ nhất chương trình 1; Không thuộc diện cảnh báo học tập; Điểm TB tích lũy đạt loại Khá trở lên (nếu ngành 2 khác ngành 1).",
+      "id": "chk_qc_003",
+      "text": "Điều 2.4.a: Thời gian học chuẩn (Chính quy): Cử nhân (120 tín chỉ): 4 năm; Kỹ sư (150 tín chỉ): 4.5 năm; Liên thông Trung cấp lên ĐH (85 tín): 2.5 năm; Liên thông Cao đẳng lên ĐH hoặc Bằng thứ hai (60 tín): 2.0 năm.",
       "citation": {
-        "chunkId": "chk_810_01",
-        "documentId": "doc003",
-        "chunkIndex": 0,
-        "quote": "Điều kiện học chương trình thứ hai: Đã kết thúc năm thứ nhất chương trình 1; Không thuộc diện cảnh b"
+        "chunkId": "chk_qc_003",
+        "documentId": "doc_258",
+        "chunkIndex": 2,
+        "quote": "Điều 2.4.a: Thời gian học chuẩn (Chính quy): Cử nhân (120 tín chỉ): 4 năm; Kỹ sư (150 tín chỉ): 4.5 "
+      }
+    },
+    {
+      "id": "chk_qc_004",
+      "text": "Điều 2.5: Thời gian tối đa hoàn thành khóa học không vượt quá 02 lần thời gian theo kế hoạch học tập chuẩn. Với hệ liên thông/văn bằng 2, thời gian tối đa giảm tương ứng với khối lượng tín chỉ được miễn trừ.",
+      "citation": {
+        "chunkId": "chk_qc_004",
+        "documentId": "doc_258",
+        "chunkIndex": 3,
+        "quote": "Điều 2.5: Thời gian tối đa hoàn thành khóa học không vượt quá 02 lần thời gian theo kế hoạch học tập"
+      }
+    },
+    {
+      "id": "chk_qc_005",
+      "text": "Điều 3.2 & 3.3: Đào tạo theo tín chỉ cho phép cá nhân hóa kế hoạch học tập. Học phần bắt buộc không đạt phải học lại (hoặc học học phần tương đương/thay thế). Học phần tự chọn không đạt có thể học lại hoặc chọn học phần tự chọn khác.",
+      "citation": {
+        "chunkId": "chk_qc_005",
+        "documentId": "doc_258",
+        "chunkIndex": 4,
+        "quote": "Điều 3.2 & 3.3: Đào tạo theo tín chỉ cho phép cá nhân hóa kế hoạch học tập. Học phần bắt buộc không "
+      }
+    },
+    {
+      "id": "chk_qc_006",
+      "text": "Điều 4.1: Đào tạo chính quy tổ chức giảng dạy từ 06g00 đến 20g00 từ Thứ 2 đến Thứ 7 tại các cơ sở của Trường. Thực tập hoặc giảng dạy trực tuyến có thể thực hiện ngoài Trường.",
+      "citation": {
+        "chunkId": "chk_qc_006",
+        "documentId": "doc_258",
+        "chunkIndex": 5,
+        "quote": "Điều 4.1: Đào tạo chính quy tổ chức giảng dạy từ 06g00 đến 20g00 từ Thứ 2 đến Thứ 7 tại các cơ sở củ"
+      }
+    },
+    {
+      "id": "chk_qc_007",
+      "text": "Điều 6.1 & 6.2: Mỗi năm học có 02 học kỳ chính (tối thiểu 15 tuần thực học/kỳ, tổng 30 tuần/năm) và 01 học kỳ phụ (tối thiểu 05 tuần).",
+      "citation": {
+        "chunkId": "chk_qc_007",
+        "documentId": "doc_258",
+        "chunkIndex": 6,
+        "quote": "Điều 6.1 & 6.2: Mỗi năm học có 02 học kỳ chính (tối thiểu 15 tuần thực học/kỳ, tổng 30 tuần/năm) và "
+      }
+    },
+    {
+      "id": "chk_qc_008",
+      "text": "Điều 6.4: Thời khóa biểu bố trí đều các tuần. Trường hợp học tập trung, số giờ giảng không vượt quá 15 giờ/tuần và không quá 4 giờ/ngày.",
+      "citation": {
+        "chunkId": "chk_qc_008",
+        "documentId": "doc_258",
+        "chunkIndex": 7,
+        "quote": "Điều 6.4: Thời khóa biểu bố trí đều các tuần. Trường hợp học tập trung, số giờ giảng không vượt quá "
+      }
+    },
+    {
+      "id": "chk_qc_009",
+      "text": "Điều 9.1: Mỗi học phần có ít nhất 2 điểm thành phần chấm theo thang điểm 10. Đánh giá trực tuyến (không quá 50% trọng số) yêu cầu tính trung thực, công bằng như trực tiếp.",
+      "citation": {
+        "chunkId": "chk_qc_009",
+        "documentId": "doc_258",
+        "chunkIndex": 8,
+        "quote": "Điều 9.1: Mỗi học phần có ít nhất 2 điểm thành phần chấm theo thang điểm 10. Đánh giá trực tuyến (kh"
+      }
+    },
+    {
+      "id": "chk_qc_010",
+      "text": "Điều 9.2: Vắng thi không lý do chính đáng nhận điểm 0. Vắng thi có lý do chính đáng được dự thi đợt khác và tính điểm lần đầu.",
+      "citation": {
+        "chunkId": "chk_qc_010",
+        "documentId": "doc_258",
+        "chunkIndex": 9,
+        "quote": "Điều 9.2: Vắng thi không lý do chính đáng nhận điểm 0. Vắng thi có lý do chính đáng được dự thi đợt "
+      }
+    },
+    {
+      "id": "chk_qc_011",
+      "text": "Điều 9.3 (Xếp loại điểm chữ): Loại Đạt: A (8.5-10.0), B (7.0-8.4), C (5.5-6.9), D (4.0-5.4). Loại Không đạt: F (dưới 4.0). Điểm P dành cho học phần không tính trung bình học tập.",
+      "citation": {
+        "chunkId": "chk_qc_011",
+        "documentId": "doc_258",
+        "chunkIndex": 10,
+        "quote": "Điều 9.3 (Xếp loại điểm chữ): Loại Đạt: A (8.5-10.0), B (7.0-8.4), C (5.5-6.9), D (4.0-5.4). Loại Kh"
+      }
+    },
+    {
+      "id": "chk_qc_012",
+      "text": "Điều 9.3.d (Ký hiệu đặc biệt): I (Hoãn thi/kiểm tra); X (Chưa đủ dữ liệu); R (Được miễn học và công nhận tín chỉ). Các ký hiệu này không tính vào điểm trung bình.",
+      "citation": {
+        "chunkId": "chk_qc_012",
+        "documentId": "doc_258",
+        "chunkIndex": 11,
+        "quote": "Điều 9.3.d (Ký hiệu đặc biệt): I (Hoãn thi/kiểm tra); X (Chưa đủ dữ liệu); R (Được miễn học và công "
+      }
+    },
+    {
+      "id": "chk_qc_013",
+      "text": "Điều 9.4: Học lại và Cải thiện: Điểm học phần không đạt (F) phải học lại. Người học đã đạt có thể đăng ký học lại để cải thiện điểm. Điểm chính thức là điểm cao nhất giữa các lần học.",
+      "citation": {
+        "chunkId": "chk_qc_013",
+        "documentId": "doc_258",
+        "chunkIndex": 12,
+        "quote": "Điều 9.4: Học lại và Cải thiện: Điểm học phần không đạt (F) phải học lại. Người học đã đạt có thể đă"
       }
     }
   ]
