@@ -1,37 +1,369 @@
 """
-Help Request Service - Xử lý yêu cầu trợ giúp (hướng dẫn sử dụng hệ thống)
-Cho phép học sinh hỏi về cách hệ thống hoạt động và chatbot sẽ khởi tạo cuộc hội thoại
+Help Request Service - Kênh hỗ trợ trực tiếp giữa sinh viên và admin.
 """
 
-import json
 from datetime import datetime, timezone
 from uuid import uuid4
-from services.nlp_service import NLPService
 from services.chat_session_service import ChatSessionService
 from services.chat_message_service import ChatMessageService
+from services.nlp_service import NLPService
 from models.chat_session_model import ChatSessionModel
 from models.chat_message_model import ChatMessageModel
 from fastapi import HTTPException
 
 
 class HelpRequestService:
-    """Xử lý yêu cầu trợ giúp và khởi tạo cuộc hội thoại hỗ trợ"""
+    """Xử lý yêu cầu trợ giúp giữa sinh viên và admin"""
+
+    BOT_ESCALATION_CHANNEL = "bot_escalation"
+
+    GUIDANCE_PROMPT_TEMPLATE = """
+Bạn là trợ lý vận hành hệ thống GC-Proctor cho sinh viên.
+
+Mục tiêu:
+- Hướng dẫn rõ ràng cách dùng các chức năng phía sinh viên.
+- Trả lời theo từng bước thao tác thực tế trong ứng dụng.
+- Nếu câu hỏi ngoài phạm vi hoặc thiếu dữ liệu, nói rõ giới hạn và đề xuất bấm "Hỏi admin".
+
+Các chức năng sinh viên có trong hệ thống:
+1) Dashboard Sinh viên
+2) Hỏi đáp Quy chế
+3) Lịch thi của tôi
+4) Ôn tập kiến thức
+5) Yêu cầu hỗ trợ
+6) Trợ lý vận hành (bot)
+
+Ràng buộc trả lời:
+- Ngắn gọn, dễ hiểu, tiếng Việt.
+- Không bịa thông tin kỹ thuật nội bộ hoặc dữ liệu không có.
+- Luôn ưu tiên hướng dẫn theo bước: "Bước 1", "Bước 2", ...
+- Nếu cần liên hệ người thật, kết thúc bằng: "Nếu bạn vẫn chưa rõ, hãy bấm Hỏi admin bên dưới câu trả lời này."
+
+Ngữ cảnh sinh viên:
+- Mã sinh viên: {student_id}
+
+Câu hỏi sinh viên:
+{question}
+""".strip()
 
     def __init__(self):
-        self.nlp_service = NLPService()
         self.chat_session_service = ChatSessionService()
         self.chat_message_service = ChatMessageService()
+        self._nlp_service = None
+
+    def _get_nlp_service(self):
+        if self._nlp_service is None:
+            self._nlp_service = NLPService()
+        return self._nlp_service
+
+    def _fallback_guidance_answer(self, question: str) -> str:
+        return (
+            "Mình chưa thể tạo phản hồi AI lúc này.\n\n"
+            "Bước 1: Vào đúng mục chức năng ở menu bên trái.\n"
+            "Bước 2: Nhập đầy đủ thông tin bắt buộc (ví dụ: mã sinh viên).\n"
+            "Bước 3: Bấm nút thao tác tương ứng và kiểm tra thông báo hệ thống.\n"
+            "Bước 4: Nếu vẫn lỗi, chụp màn hình + mô tả câu hỏi: "
+            f"\"{question}\" để gửi admin.\n\n"
+            "Nếu bạn vẫn chưa rõ, hãy bấm Hỏi admin bên dưới câu trả lời này."
+        )
+
+    def get_guidance_response(self, student_id: str, question: str) -> dict:
+        """Sinh phản hồi hướng dẫn vận hành cho sinh viên bằng prompt template chặt chẽ"""
+        clean_student_id = str(student_id or "chưa cung cấp").strip()
+        clean_question = str(question or "").strip()
+        if not clean_question:
+            raise HTTPException(status_code=400, detail="Câu hỏi không được để trống")
+
+        prompt = self.GUIDANCE_PROMPT_TEMPLATE.format(
+            student_id=clean_student_id,
+            question=clean_question,
+        )
+
+        try:
+            answer = self._get_nlp_service().generate_text(prompt)
+            return {
+                "answer": answer,
+                "usedFallback": False,
+                "promptTemplate": self.GUIDANCE_PROMPT_TEMPLATE,
+                "error": "",
+            }
+        except Exception as e:
+            error_reason = str(e)
+            if len(error_reason) > 240:
+                error_reason = error_reason[:240] + "..."
+            return {
+                "answer": self._fallback_guidance_answer(clean_question),
+                "usedFallback": True,
+                "promptTemplate": self.GUIDANCE_PROMPT_TEMPLATE,
+                "error": error_reason,
+            }
+
+    def create_bot_escalation_session(self, user_id: str, message: str, transcript: str) -> dict:
+        """Tạo phiên chuyển tiếp từ bot sang admin, kèm trích dẫn lịch sử chat bot"""
+        try:
+            session_id = str(uuid4())
+            now = datetime.now(timezone.utc)
+
+            help_session = ChatSessionModel(
+                id=session_id,
+                userId=user_id,
+                channel=self.BOT_ESCALATION_CHANNEL,
+                persona="admin_support",
+                sessionStatus="active",
+                startedAt=now,
+                endedAt=None,
+                isActive=True,
+            )
+
+            session_created = self.chat_session_service.create_chat_session(help_session)
+            if not session_created:
+                raise HTTPException(status_code=500, detail="Không thể tạo phiên chuyển tiếp admin")
+
+            student_message_id = str(uuid4())
+            escalation_content = (
+                "[Yêu cầu từ botchat]\n"
+                f"Nội dung sinh viên: {message}\n\n"
+                "[Trích dẫn lịch sử botchat]\n"
+                f"{transcript}"
+            )
+            student_message = ChatMessageModel(
+                id=student_message_id,
+                sessionId=session_id,
+                senderType="student",
+                intent="bot_escalation_request",
+                content=escalation_content,
+                citations={},
+                entities={"source": "botchat"},
+                createdAt=now,
+                isActive=True,
+            )
+            self.chat_message_service.create_chat_message(student_message)
+
+            return {
+                "sessionId": session_id,
+                "channel": self.BOT_ESCALATION_CHANNEL,
+                "messageId": student_message_id,
+                "status": "active",
+                "timestamp": now.isoformat(),
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi tạo phiên chuyển tiếp admin: {str(e)}")
+
+    def get_bot_escalation_sessions(self, include_closed: bool = True, limit: int = 200) -> dict:
+        """Lấy danh sách phiên chuyển tiếp từ botchat để admin xử lý"""
+        try:
+            sessions = self.chat_session_service.get_sessions_by_channel(self.BOT_ESCALATION_CHANNEL)
+            sessions = sorted(
+                sessions,
+                key=lambda s: s.get_startedAt() or datetime.min.replace(tzinfo=timezone.utc),
+                reverse=True,
+            )
+
+            if not include_closed:
+                sessions = [s for s in sessions if s.get_sessionStatus() != "closed"]
+
+            formatted = []
+            for session in sessions[:limit]:
+                session_messages = self.chat_message_service.get_messages_by_session(session.get_id(), limit=200)
+                last_message = session_messages[-1] if session_messages else None
+                formatted.append(
+                    {
+                        "sessionId": session.get_id(),
+                        "userId": session.get_userId(),
+                        "status": session.get_sessionStatus(),
+                        "isActive": session.get_state(),
+                        "startedAt": session.get_startedAt().isoformat() if session.get_startedAt() else None,
+                        "endedAt": session.get_endedAt().isoformat() if session.get_endedAt() else None,
+                        "lastMessage": last_message.get_content() if last_message else "",
+                    }
+                )
+
+            return {"count": len(formatted), "sessions": formatted}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi lấy danh sách chuyển tiếp botchat: {str(e)}")
+
+    def get_bot_escalation_sessions_by_user(self, user_id: str, include_closed: bool = True, limit: int = 50) -> dict:
+        """Lấy danh sách phiên chuyển tiếp botchat theo sinh viên"""
+        try:
+            normalized_user_id = str(user_id).strip()
+            sessions = self.chat_session_service.get_sessions_by_channel(self.BOT_ESCALATION_CHANNEL)
+            sessions = [s for s in sessions if str(s.get_userId()).strip() == normalized_user_id]
+            sessions = sorted(
+                sessions,
+                key=lambda s: s.get_startedAt() or datetime.min.replace(tzinfo=timezone.utc),
+                reverse=True,
+            )
+
+            if not include_closed:
+                sessions = [s for s in sessions if s.get_sessionStatus() != "closed"]
+
+            formatted = []
+            for session in sessions[:limit]:
+                session_messages = self.chat_message_service.get_messages_by_session(session.get_id(), limit=100)
+                last_message = session_messages[-1] if session_messages else None
+                formatted.append(
+                    {
+                        "sessionId": session.get_id(),
+                        "status": session.get_sessionStatus(),
+                        "startedAt": session.get_startedAt().isoformat() if session.get_startedAt() else None,
+                        "endedAt": session.get_endedAt().isoformat() if session.get_endedAt() else None,
+                        "lastMessage": last_message.get_content() if last_message else "",
+                    }
+                )
+
+            return {"count": len(formatted), "sessions": formatted}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi lấy phiên chuyển tiếp botchat theo sinh viên: {str(e)}")
+
+    def get_bot_escalation_session_detail(self, session_id: str, limit: int = 200) -> dict:
+        """Lấy chi tiết hội thoại của một phiên chuyển tiếp botchat"""
+        try:
+            session = self.chat_session_service.get_chat_session(session_id)
+            if not session or session.get_channel() != self.BOT_ESCALATION_CHANNEL:
+                raise HTTPException(status_code=404, detail="Phiên chuyển tiếp botchat không tìm thấy")
+
+            messages = self.chat_message_service.get_messages_by_session(session_id, limit)
+            formatted_messages = []
+            for msg in messages:
+                formatted_messages.append(
+                    {
+                        "id": msg.get_id(),
+                        "sender": msg.get_senderType(),
+                        "intent": msg.get_intent(),
+                        "content": msg.get_content(),
+                        "timestamp": msg.get_createdAt().isoformat() if msg.get_createdAt() else None,
+                    }
+                )
+
+            return {
+                "session": {
+                    "sessionId": session.get_id(),
+                    "userId": session.get_userId(),
+                    "status": session.get_sessionStatus(),
+                    "isActive": session.get_state(),
+                    "startedAt": session.get_startedAt().isoformat() if session.get_startedAt() else None,
+                    "endedAt": session.get_endedAt().isoformat() if session.get_endedAt() else None,
+                },
+                "messages": formatted_messages,
+                "messageCount": len(formatted_messages),
+            }
+        except HTTPException as he:
+            raise he
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi lấy chi tiết phiên chuyển tiếp botchat: {str(e)}")
+
+    def send_bot_escalation_message(self, session_id: str, user_id: str, message: str) -> dict:
+        """Sinh viên gửi thêm tin nhắn trong phiên chuyển tiếp botchat"""
+        try:
+            session = self.chat_session_service.get_chat_session(session_id)
+            if not session or session.get_channel() != self.BOT_ESCALATION_CHANNEL or session.get_userId() != user_id:
+                raise HTTPException(status_code=404, detail="Phiên chuyển tiếp botchat không tìm thấy")
+
+            now = datetime.now(timezone.utc)
+            student_msg_id = str(uuid4())
+            student_message = ChatMessageModel(
+                id=student_msg_id,
+                sessionId=session_id,
+                senderType="student",
+                intent="bot_escalation_follow_up",
+                content=message,
+                citations={},
+                entities={"source": "botchat"},
+                createdAt=now,
+                isActive=True,
+            )
+            self.chat_message_service.create_chat_message(student_message)
+
+            return {
+                "sessionId": session_id,
+                "messageId": student_msg_id,
+                "sender": "student",
+                "content": message,
+                "timestamp": now.isoformat(),
+            }
+        except HTTPException as he:
+            raise he
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi gửi tin nhắn chuyển tiếp botchat: {str(e)}")
+
+    def add_admin_response_to_bot_escalation(self, session_id: str, admin_id: str, message: str) -> dict:
+        """Admin phản hồi phiên chuyển tiếp botchat"""
+        try:
+            session = self.chat_session_service.get_chat_session(session_id)
+            if not session or session.get_channel() != self.BOT_ESCALATION_CHANNEL:
+                raise HTTPException(status_code=404, detail="Phiên chuyển tiếp botchat không tìm thấy")
+
+            now = datetime.now(timezone.utc)
+            msg_id = str(uuid4())
+            admin_message = ChatMessageModel(
+                id=msg_id,
+                sessionId=session_id,
+                senderType="admin",
+                intent="bot_escalation_admin_response",
+                content=message,
+                citations={},
+                entities={"adminId": str(admin_id), "source": "botchat"},
+                createdAt=now,
+                isActive=True,
+            )
+            created = self.chat_message_service.create_chat_message(admin_message)
+            if not created:
+                raise HTTPException(status_code=500, detail="Không thể gửi phản hồi của admin")
+
+            if session.get_sessionStatus() != "active":
+                session.set_sessionStatus("active")
+                session.set_state(True)
+                session.set_endedAt(None)
+                self.chat_session_service.update_chat_session(session)
+
+            return {
+                "sessionId": session_id,
+                "messageId": msg_id,
+                "sender": "admin",
+                "content": message,
+                "timestamp": now.isoformat(),
+            }
+        except HTTPException as he:
+            raise he
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi phản hồi admin cho chuyển tiếp botchat: {str(e)}")
+
+    def close_bot_escalation_by_admin(self, session_id: str, admin_id: str) -> dict:
+        """Admin đóng phiên chuyển tiếp botchat"""
+        try:
+            session = self.chat_session_service.get_chat_session(session_id)
+            if not session or session.get_channel() != self.BOT_ESCALATION_CHANNEL:
+                raise HTTPException(status_code=404, detail="Phiên chuyển tiếp botchat không tìm thấy")
+
+            now = datetime.now(timezone.utc)
+            session.set_sessionStatus("closed")
+            session.set_endedAt(now)
+            session.set_state(False)
+            updated = self.chat_session_service.update_chat_session(session)
+            if not updated:
+                raise HTTPException(status_code=500, detail="Không thể đóng phiên chuyển tiếp botchat")
+
+            return {
+                "sessionId": session_id,
+                "status": "closed",
+                "closedBy": str(admin_id),
+                "timestamp": now.isoformat(),
+            }
+        except HTTPException as he:
+            raise he
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi đóng phiên chuyển tiếp botchat: {str(e)}")
 
     def create_help_session(self, user_id: str, help_topic: str) -> dict:
         """
-        Tạo session hỗ trợ mới và response ban đầu từ chatbot
+        Tạo session hỗ trợ mới với tin nhắn đầu tiên của sinh viên
         
         Args:
             user_id: ID của học sinh
             help_topic: Chủ đề cần hỏi (ví dụ: "Cách dùng hệ thống", "Làm thế nào để nộp bài thi", v.v)
         
         Returns:
-            dict: Chứa session_id, lời chào từ chatbot, và các gợi ý tiếp theo
+            dict: Chứa thông tin session vừa tạo
         """
         try:
             # Tạo session chat mới cho help request
@@ -42,7 +374,7 @@ class HelpRequestService:
                 id=session_id,
                 userId=user_id,
                 channel="help_request",  # Phân biệt loại session
-                persona="help_assistant",  # Chatbot trợ giúp
+                persona="admin_support",
                 sessionStatus="active",
                 startedAt=now,
                 endedAt=None,
@@ -68,38 +400,12 @@ class HelpRequestService:
                 isActive=True
             )
             self.chat_message_service.create_chat_message(student_message)
-            
-            # 2. Xác định loại hỗ trợ cần thiết
-            support_type = self._classify_help_topic(help_topic)
-            
-            # 3. Tạo response từ chatbot
-            bot_response = self._generate_initial_response(help_topic, support_type, user_id)
-            
-            # 4. Lưu response của chatbot
-            bot_message_id = str(uuid4())
-            bot_message = ChatMessageModel(
-                id=bot_message_id,
-                sessionId=session_id,
-                senderType="bot",
-                intent="help_response",
-                content=bot_response["content"],
-                citations=bot_response.get("citations", {}),
-                entities={},
-                createdAt=now,
-                isActive=True
-            )
-            self.chat_message_service.create_chat_message(bot_message)
-            
-            # Trả về session info và response ban đầu
+
             return {
                 "sessionId": session_id,
                 "channel": "help_request",
-                "botResponse": {
-                    "messageId": bot_message_id,
-                    "content": bot_response["content"],
-                    "citations": bot_response.get("citations", {}),
-                    "suggestedQuestions": bot_response.get("suggestedQuestions", [])
-                },
+                "messageId": student_message_id,
+                "status": "active",
                 "timestamp": now.isoformat()
             }
             
@@ -108,7 +414,7 @@ class HelpRequestService:
 
     def send_help_message(self, session_id: str, user_id: str, message: str) -> dict:
         """
-        Gửi tin nhắn trong phiên hỗ trợ và nhận phản hồi từ chatbot
+        Gửi thêm tin nhắn của sinh viên trong phiên hỗ trợ
         
         Args:
             session_id: ID của session
@@ -116,7 +422,7 @@ class HelpRequestService:
             message: Nội dung tin nhắn
         
         Returns:
-            dict: Chứa response từ chatbot
+            dict: Xác nhận tin nhắn đã được lưu
         """
         try:
             # Xác minh session tồn tại
@@ -141,39 +447,11 @@ class HelpRequestService:
             )
             self.chat_message_service.create_chat_message(student_message)
             
-            # 2. Phân tích nội dung tin nhắn
-            message_analysis = self._analyze_help_message(message)
-            
-            # 3. Tạo phản hồi từ chatbot
-            bot_response = self._generate_contextual_response(
-                message,
-                message_analysis,
-                session_id
-            )
-            
-            # 4. Lưu phản hồi của chatbot
-            bot_msg_id = str(uuid4())
-            bot_message = ChatMessageModel(
-                id=bot_msg_id,
-                sessionId=session_id,
-                senderType="bot",
-                intent="help_response",
-                content=bot_response["content"],
-                citations=bot_response.get("citations", {}),
-                entities={},
-                createdAt=now,
-                isActive=True
-            )
-            self.chat_message_service.create_chat_message(bot_message)
-            
             return {
                 "sessionId": session_id,
-                "messageId": bot_msg_id,
-                "botResponse": {
-                    "content": bot_response["content"],
-                    "citations": bot_response.get("citations", {}),
-                    "suggestedQuestions": bot_response.get("suggestedQuestions", [])
-                },
+                "messageId": student_msg_id,
+                "sender": "student",
+                "content": message,
                 "timestamp": now.isoformat()
             }
             
@@ -215,195 +493,6 @@ class HelpRequestService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Lỗi kết thúc phiên hỗ trợ: {str(e)}")
 
-    # ===== HELPER METHODS =====
-
-    def _classify_help_topic(self, topic: str) -> str:
-        """Phân loại chủ đề hỗ trợ"""
-        topic_lower = topic.lower()
-        
-        if any(kw in topic_lower for kw in ["thi", "exam", "tòng", "phòng"]):
-            return "exam_guidance"
-        elif any(kw in topic_lower for kw in ["tài liệu", "document", "upload"]):
-            return "document_help"
-        elif any(kw in topic_lower for kw in ["chat", "trò chuyện", "message"]):
-            return "chat_help"
-        elif any(kw in topic_lower for kw in ["quy chế", "rule", "regulation"]):
-            return "regulation_help"
-        else:
-            return "general_help"
-
-    def _generate_initial_response(self, help_topic: str, support_type: str, user_id: str) -> dict:
-        """Tạo phản hồi ban đầu từ chatbot"""
-        
-        # Prompt để Gemini tạo lời chào phù hợp
-        prompt = f"""
-Bạn là một trợ lý thông minh giúp học sinh hiểu về hệ thống GC-Proctor.
-Một học sinh vừa bắt đầu phiên hỗ trợ với câu hỏi: "{help_topic}"
-
-Hãy:
-1. Chào đón học sinh một cách thân thiện
-2. Xác nhận hiểu rõ câu hỏi của họ
-3. Cung cấp 1-2 câu trả lời ban đầu giúp ích
-4. Đề xuất 2-3 câu hỏi tiếp theo mà học sinh có thể hỏi
-5. Mã hóa kết quả thành JSON với các key: "greeting", "answer", "suggestedQuestions"
-
-Trả về JSON đơn giản, không markdown.
-"""
-        
-        try:
-            response = self.nlp_service.generate_json(prompt)
-            
-            content = f"{response.get('greeting', '')}\n\n{response.get('answer', '')}"
-            suggested_questions = response.get('suggestedQuestions', [])
-            
-            return {
-                "content": content,
-                "citations": {},
-                "suggestedQuestions": suggested_questions
-            }
-        except:
-            # Fallback nếu Gemini gặp lỗi
-            return {
-                "content": f"""Xin chào! 👋
-
-Tôi hiểu bạn muốn hỏi: "{help_topic}"
-
-Tôi là trợ lý hỗ trợ của hệ thống GC-Proctor. Tôi sẽ giúp bạn hiểu:
-- Cách sử dụng hệ thống
-- Quy định và hướng dẫn thi
-- Cách thức làm việc các tính năng
-- Các câu hỏi thường gặp
-
-Vui lòng tiếp tục hỏi chi tiết hơn hoặc chọn một trong những gợi ý dưới đây:""",
-                "citations": {},
-                "suggestedQuestions": [
-                    "Hệ thống hoạt động như thế nào?",
-                    "Tôi cần làm gì để chuẩn bị thi?",
-                    "Có những tính năng nào hữu ích?"
-                ]
-            }
-
-    def _analyze_help_message(self, message: str) -> dict:
-        """Phân tích tin nhắn từ học sinh - xác định nhu cầu cụ thể"""
-        
-        message_lower = message.lower()
-        
-        analysis = {
-            "intent": "clarification",
-            "category": "general",
-            "keywords": []
-        }
-        
-        # Xác định category
-        if any(kw in message_lower for kw in ["thi", "exam", "tòng", "phòng"]):
-            analysis["category"] = "exam"
-            analysis["keywords"] = ["exam", "test", "schedule"]
-        elif any(kw in message_lower for kw in ["tài liệu", "document", "upload", "tải"]):
-            analysis["category"] = "documents"
-            analysis["keywords"] = ["documents", "materials", "upload"]
-        elif any(kw in message_lower for kw in ["ôn tập", "study", "learn", "học"]):
-            analysis["category"] = "study"
-            analysis["keywords"] = ["study", "materials", "learning"]
-        elif any(kw in message_lower for kw in ["chat", "trò chuyện", "message", "tin nhắn"]):
-            analysis["category"] = "communication"
-            analysis["keywords"] = ["chat", "messages"]
-        elif any(kw in message_lower for kw in ["quy chế", "rule", "regulation", "điều lệ"]):
-            analysis["category"] = "regulations"
-            analysis["keywords"] = ["rules", "regulations"]
-        
-        return analysis
-
-    def _generate_contextual_response(self, message: str, analysis: dict, session_id: str) -> dict:
-        """Tạo phản hồi có ngữ cảnh dựa trên tin nhắn của học sinh"""
-        
-        category = analysis.get("category", "general")
-        
-        # Tạo prompt phù hợp dựa trên category
-        category_context = {
-            "exam": """Học sinh đang hỏi về kỳ thi. Hãy cung cấp:
-- Hướng dẫn chuẩn bị thi
-- Quy định phòng thi
-- Cách thức toàn bộ quy trình thi
-- Các câu hỏi thường gặp về thi""",
-            
-            "documents": """Học sinh đang hỏi về tài liệu. Hãy cung cấp:
-- Cách tải lên tài liệu
-- Các tài liệu được hỗ trợ
-- Cách tìm kiếm tài liệu
-- Cách sử dụng thư viện tài liệu""",
-            
-            "study": """Học sinh đang hỏi về ôn tập. Hãy cung cấp:
-- Các tài nguyên ôn tập có sẵn
-- Cách sử dụng flashcard
-- Cách yêu cầu hướng dẫn ôn tập
-- Lời khuyên ôn tập hiệu quả""",
-            
-            "communication": """Học sinh đang hỏi về chat. Hãy cung cấp:
-- Cách sử dụng tính năng chat
-- Cách hỏi trợ giúp qua chat
-- Các công việc có thể làm qua chat
-- Mô tả các persona/vai trò của chatbot""",
-            
-            "regulations": """Học sinh đang hỏi về quy chế. Hãy cung cấp:
-- Tóm tắt các quy chế chính
-- Quy định về hành vi kỳ thi
-- Quy định bị cấm
-- Nơi xem toàn bộ quy chế""",
-            
-            "general": """Hãy trả lời câu hỏi của học sinh một cách chi tiết và thân thiện.
-Nếu cần, gợi ý các tính năng khác của hệ thống."""
-        }
-        
-        prompt = f"""
-Bạn là trợ lý hỗ trợ của hệ thống GC-Proctor.
-Học sinh hỏi: "{message}"
-
-{category_context.get(category, category_context['general'])}
-
-Hướng dẫn:
-1. Trả lời trực tiếp và chi tiết
-2. Nếu cần, cung cấp bước thực hiện cụ thể
-3. Gợi ý 2-3 câu hỏi tiếp theo
-4. Trả về JSON với keys: "answer", "suggestedQuestions", "additionalInfo"
-
-Trả về JSON đơn giản, không markdown.
-"""
-        
-        try:
-            response = self.nlp_service.generate_json(prompt)
-            
-            content = response.get('answer', '')
-            additional_info = response.get('additionalInfo', '')
-            
-            if additional_info:
-                content += f"\n\n📌 Thông tin thêm: {additional_info}"
-            
-            return {
-                "content": content,
-                "citations": {},
-                "suggestedQuestions": response.get('suggestedQuestions', [])
-            }
-        except:
-            # Fallback response
-            return {
-                "content": f"""Cảm ơn câu hỏi của bạn!
-
-Tôi đang xử lý yêu cầu của bạn: "{message}"
-
-Tôi sẽ sớm cung cấp câu trả lời chi tiết. Trong khi đó, bạn có thể:
-- Xem phần Hướng dẫn trên ứng dụng
-- Hỏi các câu hỏi khác
-- Quay lại khi cần thêm trợ giúp
-
-Có gì tôi còn có thể giúp bạn không?""",
-                "citations": {},
-                "suggestedQuestions": [
-                    "Có câu hỏi khác không?",
-                    "Tôi muốn về trang chủ",
-                    "Kết thúc phiên hỗ trợ"
-                ]
-            }
-
     def get_session_history(self, session_id: str, user_id: str, limit: int = 50) -> dict:
         """
         Lấy lịch sử chat trong phiên hỗ trợ
@@ -443,3 +532,178 @@ Có gì tôi còn có thể giúp bạn không?""",
             raise he
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Lỗi lấy lịch sử chat: {str(e)}")
+
+    def get_help_sessions(self, include_closed: bool = True, limit: int = 200) -> dict:
+        """Lấy danh sách phiên hỗ trợ để admin theo dõi"""
+        try:
+            sessions = self.chat_session_service.get_sessions_by_channel("help_request")
+            sessions = sorted(
+                sessions,
+                key=lambda s: s.get_startedAt() or datetime.min.replace(tzinfo=timezone.utc),
+                reverse=True,
+            )
+
+            if not include_closed:
+                sessions = [s for s in sessions if s.get_sessionStatus() != "closed"]
+
+            formatted = []
+            for session in sessions[:limit]:
+                session_messages = self.chat_message_service.get_messages_by_session(session.get_id(), limit=200)
+                last_message = session_messages[-1] if session_messages else None
+                last_student_messages = [m for m in session_messages if m.get_senderType() == "student"]
+                last_student_message = last_student_messages[-1] if last_student_messages else None
+                formatted.append(
+                    {
+                        "sessionId": session.get_id(),
+                        "userId": session.get_userId(),
+                        "status": session.get_sessionStatus(),
+                        "isActive": session.get_state(),
+                        "startedAt": session.get_startedAt().isoformat() if session.get_startedAt() else None,
+                        "endedAt": session.get_endedAt().isoformat() if session.get_endedAt() else None,
+                        "lastMessage": last_message.get_content() if last_message else "",
+                        "lastMessageAt": last_message.get_createdAt().isoformat() if last_message and last_message.get_createdAt() else None,
+                        "lastStudentMessage": last_student_message.get_content() if last_student_message else "",
+                    }
+                )
+
+            return {"count": len(formatted), "sessions": formatted}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi lấy danh sách phiên hỗ trợ: {str(e)}")
+
+    def get_help_sessions_by_user(self, user_id: str, include_closed: bool = True, limit: int = 50) -> dict:
+        """Lấy danh sách phiên hỗ trợ theo user để sinh viên xem lại lịch sử"""
+        try:
+            normalized_user_id = str(user_id).strip()
+            sessions = self.chat_session_service.get_sessions_by_channel("help_request")
+            sessions = [s for s in sessions if str(s.get_userId()).strip() == normalized_user_id]
+            sessions = sorted(
+                sessions,
+                key=lambda s: s.get_startedAt() or datetime.min.replace(tzinfo=timezone.utc),
+                reverse=True,
+            )
+
+            if not include_closed:
+                sessions = [s for s in sessions if s.get_sessionStatus() != "closed"]
+
+            formatted = []
+            for session in sessions[:limit]:
+                session_messages = self.chat_message_service.get_messages_by_session(session.get_id(), limit=100)
+                last_message = session_messages[-1] if session_messages else None
+                formatted.append(
+                    {
+                        "sessionId": session.get_id(),
+                        "status": session.get_sessionStatus(),
+                        "startedAt": session.get_startedAt().isoformat() if session.get_startedAt() else None,
+                        "endedAt": session.get_endedAt().isoformat() if session.get_endedAt() else None,
+                        "lastMessage": last_message.get_content() if last_message else "",
+                    }
+                )
+
+            return {"count": len(formatted), "sessions": formatted}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi lấy danh sách phiên theo sinh viên: {str(e)}")
+
+    def get_help_session_detail(self, session_id: str, limit: int = 200) -> dict:
+        """Lấy chi tiết hội thoại của một phiên hỗ trợ cho admin"""
+        try:
+            session = self.chat_session_service.get_chat_session(session_id)
+            if not session or session.get_channel() != "help_request":
+                raise HTTPException(status_code=404, detail="Phiên hỗ trợ không tìm thấy")
+
+            messages = self.chat_message_service.get_messages_by_session(session_id, limit)
+            formatted_messages = []
+            for msg in messages:
+                formatted_messages.append(
+                    {
+                        "id": msg.get_id(),
+                        "sender": msg.get_senderType(),
+                        "intent": msg.get_intent(),
+                        "content": msg.get_content(),
+                        "timestamp": msg.get_createdAt().isoformat() if msg.get_createdAt() else None,
+                    }
+                )
+
+            return {
+                "session": {
+                    "sessionId": session.get_id(),
+                    "userId": session.get_userId(),
+                    "status": session.get_sessionStatus(),
+                    "isActive": session.get_state(),
+                    "startedAt": session.get_startedAt().isoformat() if session.get_startedAt() else None,
+                    "endedAt": session.get_endedAt().isoformat() if session.get_endedAt() else None,
+                },
+                "messages": formatted_messages,
+                "messageCount": len(formatted_messages),
+            }
+        except HTTPException as he:
+            raise he
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi lấy chi tiết phiên hỗ trợ: {str(e)}")
+
+    def add_admin_response(self, session_id: str, admin_id: str, message: str) -> dict:
+        """Thêm phản hồi từ admin vào phiên hỗ trợ"""
+        try:
+            session = self.chat_session_service.get_chat_session(session_id)
+            if not session or session.get_channel() != "help_request":
+                raise HTTPException(status_code=404, detail="Phiên hỗ trợ không tìm thấy")
+
+            now = datetime.now(timezone.utc)
+            msg_id = str(uuid4())
+            admin_message = ChatMessageModel(
+                id=msg_id,
+                sessionId=session_id,
+                senderType="admin",
+                intent="help_admin_response",
+                content=message,
+                citations={},
+                entities={"adminId": str(admin_id)},
+                createdAt=now,
+                isActive=True,
+            )
+            created = self.chat_message_service.create_chat_message(admin_message)
+            if not created:
+                raise HTTPException(status_code=500, detail="Không thể gửi phản hồi của admin")
+
+            if session.get_sessionStatus() != "active":
+                session.set_sessionStatus("active")
+                session.set_state(True)
+                session.set_endedAt(None)
+                self.chat_session_service.update_chat_session(session)
+
+            return {
+                "sessionId": session_id,
+                "messageId": msg_id,
+                "sender": "admin",
+                "content": message,
+                "timestamp": now.isoformat(),
+            }
+        except HTTPException as he:
+            raise he
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi phản hồi hỗ trợ từ admin: {str(e)}")
+
+    def close_help_session_by_admin(self, session_id: str, admin_id: str) -> dict:
+        """Đóng một phiên hỗ trợ bởi admin"""
+        try:
+            session = self.chat_session_service.get_chat_session(session_id)
+            if not session or session.get_channel() != "help_request":
+                raise HTTPException(status_code=404, detail="Phiên hỗ trợ không tìm thấy")
+
+            now = datetime.now(timezone.utc)
+            session.set_sessionStatus("closed")
+            session.set_endedAt(now)
+            session.set_state(False)
+            updated = self.chat_session_service.update_chat_session(session)
+            if not updated:
+                raise HTTPException(status_code=500, detail="Không thể đóng phiên hỗ trợ")
+
+            return {
+                "sessionId": session_id,
+                "status": "closed",
+                "closedBy": str(admin_id),
+                "timestamp": now.isoformat(),
+            }
+        except HTTPException as he:
+            raise he
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi đóng phiên hỗ trợ: {str(e)}")

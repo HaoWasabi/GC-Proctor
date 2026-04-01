@@ -1,3 +1,4 @@
+
 from typing import List
 from typing import Optional
 
@@ -16,6 +17,9 @@ class ChatMessageService(BaseService):
 
     def get_all_chat_messages(self) -> List[ChatMessageModel]:
         return self.chat_message_repository.get_all_chat_messages()
+
+    def get_messages_by_session(self, session_id: str, limit: int = 50) -> List[ChatMessageModel]:
+        return self.chat_message_repository.get_messages_by_session(session_id, limit)
 
     def create_chat_message(self, message: ChatMessageModel) -> Optional[str]:
         return self.chat_message_repository.create_chat_message(message)

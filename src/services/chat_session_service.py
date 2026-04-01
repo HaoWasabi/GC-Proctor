@@ -17,6 +17,9 @@ class ChatSessionService(BaseService):
     def get_all_chat_sessions(self) -> List[ChatSessionModel]:
         return self.chat_session_repository.get_all_chat_sessions()
 
+    def get_sessions_by_channel(self, channel: str, is_active: Optional[bool] = None) -> List[ChatSessionModel]:
+        return self.chat_session_repository.get_sessions_by_channel(channel, is_active)
+
     def create_chat_session(self, session: ChatSessionModel) -> Optional[str]:
         return self.chat_session_repository.create_chat_session(session)
 

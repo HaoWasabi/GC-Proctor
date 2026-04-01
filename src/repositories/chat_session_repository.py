@@ -32,6 +32,19 @@ class ChatSessionRepository(BaseRepository):
             logger.error(f"Error fetching all chat sessions: {e}")
             return []
 
+    def get_sessions_by_channel(self, channel: str, is_active: Optional[bool] = None) -> List[ChatSessionModel]:
+        try:
+            sessions: List[ChatSessionModel] = []
+            query = self.db.collection(self.collection_name).where("channel", "==", channel)
+            if is_active is not None:
+                query = query.where("isActive", "==", is_active)
+            for doc in query.stream():
+                sessions.append(ChatSessionModel(**doc.to_dict()))
+            return sessions
+        except Exception as e:
+            logger.error(f"Error fetching sessions by channel {channel}: {e}")
+            return []
+
     def create_chat_session(self, session: ChatSessionModel) -> Optional[str]:
         try:
             self.db.collection(self.collection_name).document(session.get_id()).set(

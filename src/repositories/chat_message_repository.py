@@ -1,4 +1,5 @@
 from typing import List, Optional
+from datetime import datetime, timezone
 from google.cloud.firestore_v1 import DocumentSnapshot
 from models.chat_message_model import ChatMessageModel
 from .base_repository import BaseRepository, logger
@@ -30,6 +31,36 @@ class ChatMessageRepository(BaseRepository):
             return messages
         except Exception as e:
             logger.error(f"Error fetching all chat messages: {e}")
+            return []
+
+    def get_messages_by_session(self, session_id: str, limit: int = 50) -> List[ChatMessageModel]:
+        try:
+            messages: List[ChatMessageModel] = []
+            query = self.db.collection(self.collection_name).where("sessionId", "==", session_id)
+            for doc in query.stream():
+                messages.append(ChatMessageModel(**doc.to_dict()))
+
+            def _normalize_created_at(value):
+                if value is None:
+                    return datetime(1970, 1, 1, tzinfo=timezone.utc)
+                if isinstance(value, datetime):
+                    if value.tzinfo is None:
+                        return value.replace(tzinfo=timezone.utc)
+                    return value
+                try:
+                    parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+                    if parsed.tzinfo is None:
+                        return parsed.replace(tzinfo=timezone.utc)
+                    return parsed
+                except Exception:
+                    return datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+            messages.sort(key=lambda m: _normalize_created_at(m.get_createdAt()))
+            if limit and limit > 0:
+                return messages[-limit:]
+            return messages
+        except Exception as e:
+            logger.error(f"Error fetching messages for session {session_id}: {e}")
             return []
 
     def create_chat_message(self, message: ChatMessageModel) -> Optional[str]:
