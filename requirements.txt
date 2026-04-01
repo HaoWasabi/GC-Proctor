@@ -17,3 +17,6 @@ sentence-transformers>=2.6.1
 numpy>=1.24.0
 faiss-cpu
 torchvision
+pymupdf
+beautifulsoup4 
+requests

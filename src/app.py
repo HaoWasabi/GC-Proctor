@@ -341,70 +341,138 @@ elif st.session_state.page == "chat_lichthi":
     render_chat_ui("chat_lichthi", "🤖 Hỏi đáp lịch thi", "Bạn có thắc mắc gì về danh sách môn thi ở trên không?", is_exam_lookup=True)
 
 elif st.session_state.page == "chat_ontap":
-    st.header("📚 Cổng Ôn tập Thông minh")
+    st.header("📚 Trợ Lý Ôn Tập AI Toàn Năng")
 
-    t1, t2, t3 = st.tabs(["💬 Chat với Tài liệu", "🗂️ Flashcards AI", "📖 Tài liệu đề xuất"])
-
-    with t1:
-        st.markdown("Hỏi đáp với kho tài liệu dùng chung, hoặc **tự tải lên bài giảng của bạn** để AI hỗ trợ ôn tập.")
-        
-        # Phần Upload tài liệu an toàn (Chỉ dùng kb_service gốc)
-        with st.expander("📁 Thêm tài liệu ôn tập cá nhân (PDF, DOCX)"):
-            st.info("Tài liệu tải lên ở đây sẽ được AI phân tích để tạo Flashcard và hỗ trợ trả lời câu hỏi.")
-            col_file, col_course = st.columns([2, 1])
-            with col_file:
-                uploaded_study_doc = st.file_uploader("Chọn slide/bài giảng", type=["pdf", "docx"], key="student_upload")
-            with col_course:
-                study_course_code = st.text_input("Mã môn học", placeholder="VD: PRM392", key="student_course")
-            
-            if st.button("🚀 Bắt đầu học tài liệu này"):
-                if uploaded_study_doc and study_course_code:
-                    with st.spinner("Đang lưu tài liệu vào hệ thống..."):
+    # ==========================================
+    # 1. KHU VỰC TẢI TÀI LIỆU
+    # ==========================================
+    with st.expander("📁 Tải lên tài liệu bài giảng (PDF/DOCX) để AI học"):
+        c1, c2, c3 = st.columns([2, 1, 1])
+        with c1:
+            uploaded_doc = st.file_uploader("File", type=["pdf", "docx"], label_visibility="collapsed")
+        with c2:
+            course_code = st.text_input("Mã môn", placeholder="VD: PRM392", label_visibility="collapsed")
+        with c3:
+            if st.button("🚀 Bắt đầu học", width="stretch"):
+                if uploaded_doc and course_code:
+                    with st.spinner("AI đang đọc và ghi nhớ tài liệu..."):
                         try:
-                            file_bytes = uploaded_study_doc.getvalue()
+                            import base64
+                            file_bytes = uploaded_doc.getvalue()
                             encoded_file = base64.b64encode(file_bytes).decode('utf-8')
-                            data = kb_service.upload_document(
-                                file_path=encoded_file,
-                                course_code=study_course_code.upper(),
-                                title=uploaded_study_doc.name
-                            )
-                            # Thông báo chat thành công
-                            st.session_state.chat_ontap.append({"role": "assistant", "content": f"✅ Đã tải và học xong tài liệu **{uploaded_study_doc.name}** (Môn {study_course_code.upper()}). Hãy đặt câu hỏi hoặc sang tab Flashcard để ôn tập nhé!"})
-                            st.success("Tải tài liệu thành công!")
+                            kb_service.upload_document(encoded_file, course_code.upper(), uploaded_doc.name)
+                            
+                            st.session_state.chat_ontap.append({"role": "assistant", "content": f"✅ Đã thuộc nằm lòng tài liệu **{uploaded_doc.name}**! Bạn có thể hỏi mình bất cứ điều gì về nó."})
+                            st.rerun()
                         except Exception as e:
-                            st.error(f"⚠️ Có lỗi xảy ra: {e}")
+                            st.error(f"Lỗi: {e}")
                 else:
-                    st.warning("Vui lòng tải file và nhập mã môn học.")
-        
-        st.divider()
-        
-        
-        render_chat_ui("chat_ontap", "Hỏi đáp kiến thức", "Hỏi về slide, bài giảng...", is_study_rag=True, course_code=study_course_code if 'study_course_code' in locals() else "ALL")
+                    st.warning("Thiếu file hoặc mã môn!")
 
-    with t2:
-        st.subheader("Tạo bộ thẻ ghi nhớ")
-        fc_course = st.text_input("Mã môn học (VD: PRM392, hoặc ALL)", value="ALL", key="fc_course_input")
-        topic = st.text_input("Chủ đề ôn tập", key="fc_topic")
-        
-        if st.button("🚀 Tạo ngay"):
-            with st.spinner("Đang tạo thẻ..."):
-                res = study_svc.generate_flashcards(fc_course, topic) 
-                # Đã fix lỗi KeyError "status"
-                if "flashcards" in res and len(res["flashcards"]) > 0:
-                    for card in res["flashcards"]:
-                        with st.expander(card.get("question", "Câu hỏi")):
-                            st.write(card.get("answer", "Trả lời"))
-                else:
-                    st.error(res.get("message", "Không thể tạo bộ thẻ hoặc môn học chưa có dữ liệu."))
+    # ==========================================
+    # 2. KHU VỰC CHAT THUẦN TÚY (AI AGENT)
+    # ==========================================
+    st.divider()
+    
+    col_title, col_clear = st.columns([5, 1])
+    with col_title:
+        st.markdown(f"**Phạm vi tìm kiếm:** `Tất cả tài liệu trên hệ thống`")
+    with col_clear:
+        if st.button("🗑️ Xoá Chat", width="stretch"):
+            st.session_state.chat_ontap = [{"role": "assistant", "content": "Sẵn sàng! Bạn cần tìm hiểu hoặc ôn tập kiến thức gì?"}]
+            st.rerun()
 
-    with t3:
-        st.subheader("Tài liệu khuyên dùng")
-        mats = study_svc.get_recommendations("PRM392") 
-        if mats:
-            for m in mats:
-                st.markdown(f"- **[{m['title']}]({m['url']})**")
-        else:
-            st.info("Chưa có tài liệu đề xuất cho môn này trên Firebase.")
+    # Khung hiển thị chat
+    chat_container = st.container(height=500, border=True)
+    with chat_container:
+        for message in st.session_state.chat_ontap:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+    # Ô nhập liệu duy nhất
+    if prompt := st.chat_input("Hỏi kiến thức (VD: AI là gì? OOP là gì?)..."):
+        st.session_state.chat_ontap.append({"role": "user", "content": prompt})
+        with chat_container:
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+            with st.chat_message("assistant"):
+                message_placeholder = st.empty()
+                with st.spinner("Đang lục tìm trong toàn bộ hệ thống..."):
+                    
+                    # 1. Tìm trong TẤT CẢ tài liệu (Bỏ giới hạn mã môn, dùng "ALL")
+                    chunks = kb_service.retrieve_relevant_chunks(prompt, "ALL")
+                    context = "\n\n".join([c.get("content", "") for c in chunks]) if chunks else ""
+
+                    # 2. Đưa cho LLM đánh giá xem tài liệu CÓ chứa câu trả lời hay không
+                    sys_prompt = f"""
+                    Nhiệm vụ: Bạn là trợ lý ôn tập kiến thức cho sinh viên , bạn là một người trợ lí có giọng điệu nhí nhảnh và luôn hỗ trợ sinh viên ôn tập hết mình.
+                    HÃY PHÂN TÍCH Ý ĐỊNH THỰC SỰ CỦA SINH VIÊN (bao gồm cả việc họ gõ sai chính tả, dùng từ lóng, viết tắt) VÀ TRẢ LỜI THEO CÁC QUY TẮC SAU:
+                    1. NÊU CẦU NGOÀI LỀ: Nếu ý định của họ KHÔNG liên quan gì đến học tập, ôn thi, kiến thức (ví dụ hỏi thời tiết, chitchat linh tinh, trêu đùa,...), hãy trả lời đúng là bạn không thể giúp gì vì không nằm trong chuyên môn
+                    2. Nếu câu hỏi liên quan đến học tập, hãy tìm câu trả lời trong TÀI LIỆU BÊN DƯỚI.
+                    3. KHÔNG CÓ THÔNG TIN: Nếu họ hỏi kiến thức môn học, nhưng TÀI LIỆU BÊN DƯỚI KHÔNG CÓ CHỮ NÀO NHẮC ĐẾN THÔNG TIN ĐÓ, hãy tìm kiếm thông tin về nôi dung đó trên trang tailieuhust.com trả về đường link đó và trả lời thêm rằng  sinh viên có thể cung cấp cho tôi tài liệu để tôi tóm tắt
+                    4. CÓ THÔNG TIN: Nếu tài liệu có thông tin để giải đáp câu hỏi của họ, hãy trả lời thật chi tiết, dễ hiểu, trình bày đẹp mắt và dùng nhiều emoji nhí nhảnh. Tuyệt đối không tự bịa thêm kiến thức ngoài tài liệu.
+                    5. YÊU CẦU FLASHCARD: Nếu ý định của họ là muốn bạn tạo ra các thẻ ghi nhớ, câu hỏi trắc nghiệm, flashcard để ôn bài (kể cả gõ sai như "flascat", "flash card", "tạo thẻ", "câu hỏi ôn"...), CHỈ TRẢ LỜI ĐÚNG 1 CHỮ: ACTION_FLASHCARD
+                    6. YÊU CẦU MINDMAP: Nếu ý định của họ là muốn bạn vẽ sơ đồ tư duy, hệ thống hóa kiến thức bằng hình cây (kể cả gõ sai như "vẻ sơ đò", "mai map", "sơ đồ", "mind map"...), CHỈ TRẢ LỜI ĐÚNG 1 CHỮ: ACTION_MINDMAP
+                    TÀI LIỆU CỦA HỆ THỐNG:
+                    {context}
+                    """
+                    
+                    try:
+                        llm_response = study_svc.model.generate_content(sys_prompt).text.strip()
+
+                        if "OUT_OF_SCOPE" in llm_response:
+                            ai_response = "⚠️ Xin lỗi, mình là trợ lý học tập nên chỉ giải đáp các vấn đề liên quan đến môn học, giáo dục và ôn thi thôi nhé!"
+
+                        elif "NO_DATA" in llm_response or not chunks:
+                            message_placeholder.markdown("🔍 *Không có trong kho lưu trữ, đang cào dữ liệu trên TailieuHUST...*")                           
+                            # Dùng chính câu hỏi của sinh viên làm từ khóa tìm kiếm trên mạng
+                            mats = study_svc.get_recommendations(prompt)
+                            
+                            if mats:
+                                ai_response = f"⚠️ Trong kho dữ liệu của mình hiện chưa có tài liệu nào nhắc đến **'{prompt}'**.\n\n"
+                                ai_response += "💡 **Tuy nhiên:** Mình vừa tìm thấy một số tài liệu trên web TailieuHUST có thể chứa đáp án. Bạn hãy tải về và **Upload ngược lên đây** để mình đọc và giải đáp cho bạn nhé:\n\n"
+                                for m in mats:
+                                    ai_response += f"- 📄 [{m['title']}]({m['url']})\n"
+                            else:
+                                ai_response = f"⚠️ Mình không tìm thấy thông tin về **'{prompt}'** trong hệ thống, và cũng không có kết quả nào trên thư viện TailieuHUST."
+
+                        elif "ACTION_MINDMAP" in llm_response:
+                            message_placeholder.markdown("🌳 *Đang cầm cọ vẽ sơ đồ tư duy, đợi xíu nha...*")
+                            if not chunks:
+                                ai_response = "⚠️ Úi, hệ thống chưa có tài liệu về phần này nên mình không vẽ sơ đồ được. Bạn upload thêm nha!"
+                            else:
+                                map_prompt = f"Vẽ sơ đồ (mindmap/graph) cho: {prompt}. BẮT BUỘC TRẢ VỀ CÚ PHÁP MERMAID JS BẮT ĐẦU BẰNG `graph TD` hoặc `mindmap`. KHÔNG bọc markdown.\nNỘI DUNG:\n{context}"
+                                import json, requests, base64
+                                mermaid_code = study_svc.model.generate_content(map_prompt).text.replace("```mermaid", "").replace("```", "").strip()
+                                payload = {"code": mermaid_code, "mermaid": {"theme": "default"}}
+                                b64 = base64.b64encode(json.dumps(payload).encode('utf-8')).decode('utf-8')
+                                img_url = f"https://mermaid.ink/img/{b64}"
+                                res_img = requests.get(img_url)
+                                if res_img.status_code == 200:
+                                    ai_response = f"🎉 **Ten tèn! Sơ đồ của bạn đây, hi vọng nó giúp bạn dễ nhớ bài hơn:**\n\n![Mindmap]({img_url})"
+                                else:
+                                    ai_response = f"⚠️ Oops, có chút lỗi khi vẽ ảnh rồi (Code {res_img.status_code}). Cú pháp bị kẹt một chút:\n```mermaid\n{mermaid_code}\n```"
+                        
+                        elif "ACTION_FLASHCARD" in llm_response:
+                            message_placeholder.markdown("🗂️ *Đang soạn thẻ ghi nhớ cho bạn đây...*")
+                            res = study_svc.generate_flashcards("ALL", prompt)
+                            if "flashcards" in res and len(res["flashcards"]) > 0:
+                                ai_response = f"**🎉 Ta-da! Mình đã tạo xong bộ thẻ Flashcard cho bạn rồi nè:**\n\n"
+                                for i, card in enumerate(res["flashcards"], 1):
+                                    ai_response += f"**Q{i}:** {card.get('question', '')}\n> **A{i}:** {card.get('answer', '')}\n\n---\n"
+                            else:
+                                ai_response = f"⚠️ Tiếc quá, mình không tìm thấy đủ dữ liệu để tạo flashcard cho yêu cầu này. Bạn cho mình thêm tài liệu nha!"
+
+                        else:
+                            ai_response = llm_response
+
+                    except Exception as e:
+                        ai_response = f"Lỗi khi gọi AI: {e}"
+                
+                # Render nội dung ra màn hình
+                message_placeholder.markdown(ai_response)
+                st.session_state.chat_ontap.append({"role": "assistant", "content": ai_response})
 
 elif st.session_state.page == "chat_bot_guidance":
     st.header("🤖 Trợ lý vận hành sinh viên")
