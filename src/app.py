@@ -406,14 +406,22 @@ elif st.session_state.page == "chat_ontap":
 
                     # 2. Đưa cho LLM đánh giá xem tài liệu CÓ chứa câu trả lời hay không
                     sys_prompt = f"""
-                    Nhiệm vụ: Bạn là trợ lý ôn tập kiến thức cho sinh viên , bạn là một người trợ lí có giọng điệu nhí nhảnh và luôn hỗ trợ sinh viên ôn tập hết mình.
-                    HÃY PHÂN TÍCH Ý ĐỊNH THỰC SỰ CỦA SINH VIÊN (bao gồm cả việc họ gõ sai chính tả, dùng từ lóng, viết tắt) VÀ TRẢ LỜI THEO CÁC QUY TẮC SAU:
-                    1. NÊU CẦU NGOÀI LỀ: Nếu ý định của họ KHÔNG liên quan gì đến học tập, ôn thi, kiến thức (ví dụ hỏi thời tiết, chitchat linh tinh, trêu đùa,...), hãy trả lời đúng là bạn không thể giúp gì vì không nằm trong chuyên môn
-                    2. Nếu câu hỏi liên quan đến học tập, hãy tìm câu trả lời trong TÀI LIỆU BÊN DƯỚI.
-                    3. KHÔNG CÓ THÔNG TIN: Nếu họ hỏi kiến thức môn học, nhưng TÀI LIỆU BÊN DƯỚI KHÔNG CÓ CHỮ NÀO NHẮC ĐẾN THÔNG TIN ĐÓ, hãy tìm kiếm thông tin về nôi dung đó trên trang tailieuhust.com trả về đường link đó và trả lời thêm rằng  sinh viên có thể cung cấp cho tôi tài liệu để tôi tóm tắt
-                    4. CÓ THÔNG TIN: Nếu tài liệu có thông tin để giải đáp câu hỏi của họ, hãy trả lời thật chi tiết, dễ hiểu, trình bày đẹp mắt và dùng nhiều emoji nhí nhảnh. Tuyệt đối không tự bịa thêm kiến thức ngoài tài liệu.
-                    5. YÊU CẦU FLASHCARD: Nếu ý định của họ là muốn bạn tạo ra các thẻ ghi nhớ, câu hỏi trắc nghiệm, flashcard để ôn bài (kể cả gõ sai như "flascat", "flash card", "tạo thẻ", "câu hỏi ôn"...), CHỈ TRẢ LỜI ĐÚNG 1 CHỮ: ACTION_FLASHCARD
-                    6. YÊU CẦU MINDMAP: Nếu ý định của họ là muốn bạn vẽ sơ đồ tư duy, hệ thống hóa kiến thức bằng hình cây (kể cả gõ sai như "vẻ sơ đò", "mai map", "sơ đồ", "mind map"...), CHỈ TRẢ LỜI ĐÚNG 1 CHỮ: ACTION_MINDMAP
+                    Nhiệm vụ: Bạn là trợ lý ôn tập kiến thức cho sinh viên. Bạn là một người trợ lí có giọng điệu nhí nhảnh và luôn hỗ trợ sinh viên hết mình.
+                    
+                    CÂU HỎI / YÊU CẦU CỦA SINH VIÊN: "{prompt}"
+                    
+                    HÃY PHÂN TÍCH CÂU HỎI VÀ ĐỐI CHIẾU VỚI TÀI LIỆU, SAU ĐÓ BẮT BUỘC PHẢI LÀM THEO 1 TRONG 5 QUY TẮC DƯỚI ĐÂY:
+                    
+                    1. NÊU CẦU NGOÀI LỀ: Nếu ý định của họ KHÔNG liên quan gì đến học tập, ôn thi (ví dụ hỏi thời tiết, trêu đùa), CHỈ TRẢ LỜI ĐÚNG 1 CHỮ: OUT_OF_SCOPE
+                    
+                    2. KHÔNG CÓ THÔNG TIN TRONG TÀI LIỆU: Nếu họ hỏi kiến thức (VD: "AI là gì?"), nhưng TÀI LIỆU BÊN DƯỚI KHÔNG CHỨA THÔNG TIN ĐÓ, bạn KHÔNG ĐƯỢC bẻ lái sang chuyện khác, mà CHỈ TRẢ LỜI ĐÚNG 1 CHỮ: NO_DATA
+                    
+                    3. YÊU CẦU FLASHCARD: Nếu sinh viên muốn tạo thẻ ghi nhớ, flashcard, CHỈ TRẢ LỜI ĐÚNG 1 CHỮ: ACTION_FLASHCARD
+                    
+                    4. YÊU CẦU MINDMAP: Nếu sinh viên muốn vẽ sơ đồ tư duy, mindmap, CHỈ TRẢ LỜI ĐÚNG 1 CHỮ: ACTION_MINDMAP
+                    
+                    5. CÓ THÔNG TIN: Nếu tài liệu THỰC SỰ CÓ CHỨA thông tin để giải đáp, hãy trả lời chi tiết, dùng nhiều emoji nhí nhảnh. TUYỆT ĐỐI không tự bịa thêm kiến thức ngoài tài liệu.
+
                     TÀI LIỆU CỦA HỆ THỐNG:
                     {context}
                     """
@@ -421,26 +429,29 @@ elif st.session_state.page == "chat_ontap":
                     try:
                         llm_response = study_svc.model.generate_content(sys_prompt).text.strip()
 
+                        # --- NHÁNH 1: HỎI NGOÀI LỀ ---
                         if "OUT_OF_SCOPE" in llm_response:
-                            ai_response = "⚠️ Xin lỗi, mình là trợ lý học tập nên chỉ giải đáp các vấn đề liên quan đến môn học, giáo dục và ôn thi thôi nhé!"
+                            ai_response = "⚠️ Hihi, câu hỏi này nằm ngoài chuyên môn của mình mất rồi! Mình chỉ giúp bạn ôn thi thôi nha! 📚"
 
+                        # --- NHÁNH 2: HỎI TRÚNG NHƯNG KHÔNG CÓ DATA -> CRAWL WEB ---
                         elif "NO_DATA" in llm_response or not chunks:
                             message_placeholder.markdown("🔍 *Không có trong kho lưu trữ, đang cào dữ liệu trên TailieuHUST...*")                           
                             # Dùng chính câu hỏi của sinh viên làm từ khóa tìm kiếm trên mạng
                             mats = study_svc.get_recommendations(prompt)
                             
                             if mats:
-                                ai_response = f"⚠️ Trong kho dữ liệu của mình hiện chưa có tài liệu nào nhắc đến **'{prompt}'**.\n\n"
-                                ai_response += "💡 **Tuy nhiên:** Mình vừa tìm thấy một số tài liệu trên web TailieuHUST có thể chứa đáp án. Bạn hãy tải về và **Upload ngược lên đây** để mình đọc và giải đáp cho bạn nhé:\n\n"
+                                ai_response = f"⚠️ Trong kho dữ liệu hiện tại của mình chưa có tài liệu nào giải thích về **'{prompt}'**.\n\n"
+                                ai_response += "💡 **Tuy nhiên:** Mình lượm được mấy file này trên TailieuHUST. Bạn tải về rồi **Upload ngược lên đây** để mình đọc và giải đáp cho nha:\n\n"
                                 for m in mats:
                                     ai_response += f"- 📄 [{m['title']}]({m['url']})\n"
                             else:
-                                ai_response = f"⚠️ Mình không tìm thấy thông tin về **'{prompt}'** trong hệ thống, và cũng không có kết quả nào trên thư viện TailieuHUST."
+                                ai_response = f"⚠️ Mình đã tìm trong hệ thống và cả TailieuHUST nhưng không thấy thông tin về **'{prompt}'**. Bạn thử đổi từ khóa khác xem sao!"
 
+                        # --- NHÁNH 3: VẼ SƠ ĐỒ ---
                         elif "ACTION_MINDMAP" in llm_response:
                             message_placeholder.markdown("🌳 *Đang cầm cọ vẽ sơ đồ tư duy, đợi xíu nha...*")
                             if not chunks:
-                                ai_response = "⚠️ Úi, hệ thống chưa có tài liệu về phần này nên mình không vẽ sơ đồ được. Bạn upload thêm nha!"
+                                ai_response = "⚠️ Úi, hệ thống chưa có tài liệu phần này nên mình không vẽ sơ đồ được. Bạn upload thêm nha!"
                             else:
                                 map_prompt = f"Vẽ sơ đồ (mindmap/graph) cho: {prompt}. BẮT BUỘC TRẢ VỀ CÚ PHÁP MERMAID JS BẮT ĐẦU BẰNG `graph TD` hoặc `mindmap`. KHÔNG bọc markdown.\nNỘI DUNG:\n{context}"
                                 import json, requests, base64
@@ -450,20 +461,22 @@ elif st.session_state.page == "chat_ontap":
                                 img_url = f"https://mermaid.ink/img/{b64}"
                                 res_img = requests.get(img_url)
                                 if res_img.status_code == 200:
-                                    ai_response = f"🎉 **Ten tèn! Sơ đồ của bạn đây, hi vọng nó giúp bạn dễ nhớ bài hơn:**\n\n![Mindmap]({img_url})"
+                                    ai_response = f"🎉 **Tèn ten! Sơ đồ của bạn đây:**\n\n![Mindmap]({img_url})"
                                 else:
-                                    ai_response = f"⚠️ Oops, có chút lỗi khi vẽ ảnh rồi (Code {res_img.status_code}). Cú pháp bị kẹt một chút:\n```mermaid\n{mermaid_code}\n```"
+                                    ai_response = f"⚠️ Lỗi vẽ ảnh (Code {res_img.status_code}). Cú pháp bị kẹt:\n```mermaid\n{mermaid_code}\n```"
                         
+                        # --- NHÁNH 4: TẠO FLASHCARD ---
                         elif "ACTION_FLASHCARD" in llm_response:
                             message_placeholder.markdown("🗂️ *Đang soạn thẻ ghi nhớ cho bạn đây...*")
                             res = study_svc.generate_flashcards("ALL", prompt)
                             if "flashcards" in res and len(res["flashcards"]) > 0:
-                                ai_response = f"**🎉 Ta-da! Mình đã tạo xong bộ thẻ Flashcard cho bạn rồi nè:**\n\n"
+                                ai_response = f"**🎉 Ta-da! Bộ thẻ Flashcard cho bạn nè:**\n\n"
                                 for i, card in enumerate(res["flashcards"], 1):
                                     ai_response += f"**Q{i}:** {card.get('question', '')}\n> **A{i}:** {card.get('answer', '')}\n\n---\n"
                             else:
-                                ai_response = f"⚠️ Tiếc quá, mình không tìm thấy đủ dữ liệu để tạo flashcard cho yêu cầu này. Bạn cho mình thêm tài liệu nha!"
+                                ai_response = f"⚠️ Tiếc quá, mình không tìm thấy đủ dữ liệu để tạo flashcard. Bạn cho mình thêm tài liệu nha!"
 
+                        # --- NHÁNH 5: TRẢ LỜI BÌNH THƯỜNG ---
                         else:
                             ai_response = llm_response
 
