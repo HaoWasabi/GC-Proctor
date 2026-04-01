@@ -26,41 +26,82 @@ class DocumentChunkRepository(BaseRepository):
             chunks: List[DocumentChunkModel] = []
             docs = self.db.collection(self.collection_name).stream()
             for doc in docs:
-                data = doc.to_dict() or {}
-
-                # Support mixed schema and skip malformed docs instead of failing entire retrieval.
-                normalized = {
-                    "id": data.get("id") or doc.id,
-                    "documentId": data.get("documentId") or data.get("document_id") or "",
-                    "chunkIndex": data.get("chunkIndex") if data.get("chunkIndex") is not None else data.get("chunk_index", 0),
-                    "content": data.get("content") or "",
-                    "embeddingId": data.get("embeddingId") or data.get("embedding_id") or "",
-                    "scoreThreshold": data.get("scoreThreshold") if data.get("scoreThreshold") is not None else data.get("score_threshold", 0.0),
-                    "createdAt": data.get("createdAt") or data.get("created_at"),
-                    "isActive": data.get("isActive", True),
-                }
-
-                # Minimum required fields to be useful for retrieval.
-                if not normalized["documentId"] or not normalized["content"] or not normalized["createdAt"]:
-                    logger.warning(
-                        "Skip malformed chunk doc id=%s keys=%s",
-                        doc.id,
-                        sorted(list(data.keys())),
-                    )
-                    continue
-
-                try:
-                    chunks.append(DocumentChunkModel(**normalized))
-                except Exception as parse_err:
-                    logger.warning(
-                        "Skip invalid chunk doc id=%s parse_error=%s",
-                        doc.id,
-                        parse_err,
-                    )
+                parsed_chunk = self._parse_chunk(doc)
+                if parsed_chunk:
+                    chunks.append(parsed_chunk)
             return chunks
         except Exception as e:
             logger.error(f"Error fetching all document chunks: {e}")
             return []
+
+    def get_document_chunks_by_owner_type(self, owner_type: str) -> List[DocumentChunkModel]:
+        """
+        Lấy chunks theo ownerType của document (ví dụ: 'regulation', 'course').
+        """
+        try:
+            # Lấy danh sách document IDs theo ownerType trước.
+            document_ids: List[str] = []
+            documents_query = self.db.collection("documents").where("ownerType", "==", owner_type).stream()
+            for document in documents_query:
+                document_ids.append(document.id)
+
+            if not document_ids:
+                return []
+
+            chunks: List[DocumentChunkModel] = []
+
+            # Firestore giới hạn tối đa 10 phần tử cho toán tử 'in'.
+            for i in range(0, len(document_ids), 10):
+                batch_ids = document_ids[i:i + 10]
+                chunk_docs = (
+                    self.db.collection(self.collection_name)
+                    .where("documentId", "in", batch_ids)
+                    .stream()
+                )
+
+                for doc in chunk_docs:
+                    parsed_chunk = self._parse_chunk(doc)
+                    if parsed_chunk:
+                        chunks.append(parsed_chunk)
+
+            return chunks
+        except Exception as e:
+            logger.error(f"Error fetching document chunks by ownerType={owner_type}: {e}")
+            return []
+
+    def _parse_chunk(self, doc: DocumentSnapshot) -> Optional[DocumentChunkModel]:
+        data = doc.to_dict() or {}
+
+        # Support mixed schema and skip malformed docs instead of failing entire retrieval.
+        normalized = {
+            "id": data.get("id") or doc.id,
+            "documentId": data.get("documentId") or data.get("document_id") or "",
+            "chunkIndex": data.get("chunkIndex") if data.get("chunkIndex") is not None else data.get("chunk_index", 0),
+            "content": data.get("content") or "",
+            "embeddingId": data.get("embeddingId") or data.get("embedding_id") or "",
+            "scoreThreshold": data.get("scoreThreshold") if data.get("scoreThreshold") is not None else data.get("score_threshold", 0.0),
+            "createdAt": data.get("createdAt") or data.get("created_at"),
+            "isActive": data.get("isActive", True),
+        }
+
+        # Minimum required fields to be useful for retrieval.
+        if not normalized["documentId"] or not normalized["content"] or not normalized["createdAt"]:
+            logger.warning(
+                "Skip malformed chunk doc id=%s keys=%s",
+                doc.id,
+                sorted(list(data.keys())),
+            )
+            return None
+
+        try:
+            return DocumentChunkModel(**normalized)
+        except Exception as parse_err:
+            logger.warning(
+                "Skip invalid chunk doc id=%s parse_error=%s",
+                doc.id,
+                parse_err,
+            )
+            return None
 
     def create_document_chunk(self, chunk: DocumentChunkModel) -> Optional[str]:
         try:

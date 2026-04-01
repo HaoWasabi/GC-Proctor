@@ -34,6 +34,20 @@ class DocumentRepository(BaseRepository):
         except Exception as e:
             logger.error(f"Error fetching all documents: {e}")
             return []
+        
+    def get_all_documents_by_ownerType(self, ownerType: str) -> List[DocumentModel]:
+        try:
+            documents: List[DocumentModel] = []
+            docs = self.db.collection(self.collection_name).stream()
+            for doc in docs:
+                data = doc.to_dict()
+                data['id'] = data.get('id', doc.id) # VÁ LỖI THIẾU ID
+                if data.get('ownerType') == ownerType:
+                    documents.append(DocumentModel(**data))
+            return documents
+        except Exception as e:
+            logger.error(f"Error fetching all documents: {e}")
+            return []
 
     def create_document(self, document: DocumentModel) -> Optional[str]:
         try:

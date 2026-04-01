@@ -32,7 +32,7 @@ class StudyService(BaseService):
             from repositories.document_repository import DocumentRepository
             doc_repo = DocumentRepository()
             
-            all_docs = doc_repo.get_all_documents()
+            all_docs = doc_repo.get_all_documents_by_ownerType("course")
             for d in all_docs:
                 # Kiểm tra đúng môn học. Chấp nhận cả "study_material" (file sinh viên tự up)
                 if d.get_ownerId() == course_code.upper():

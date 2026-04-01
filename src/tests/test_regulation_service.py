@@ -28,7 +28,7 @@ class TestRegulationService(unittest.TestCase):
         mock_chunk = MagicMock(spec=DocumentChunkModel)
         mock_chunk.get_content.return_value = "Điều 15: Sinh viên đi trễ quá 15 phút không được vào phòng thi."
         
-        self.mock_chunk_repo.return_value.get_all_document_chunks.return_value = [mock_chunk]
+        self.mock_chunk_repo.return_value.get_document_chunks_by_owner_type.return_value = [mock_chunk]
         
         # Mock Gemini response
         mock_res = MagicMock()

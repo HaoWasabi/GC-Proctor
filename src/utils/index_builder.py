@@ -23,13 +23,13 @@ def rebuild_faiss_from_firestore():
     print("="*80)
     
     try:
-        # Lấy tất cả chunks từ Firestore
-        print("\n[1] Lấy document chunks từ Firestore...")
+        # Lấy chunks quy chế từ Firestore (ownerType=regulation)
+        print("\n[1] Lấy regulation chunks từ Firestore...")
         chunk_repo = DocumentChunkRepository()
-        chunks = chunk_repo.get_all_document_chunks()
+        chunks = chunk_repo.get_document_chunks_by_owner_type("regulation")
         
         if not chunks:
-            print("❌ Không tìm thấy chunks trong Firestore")
+            print("❌ Không tìm thấy regulation chunks trong Firestore")
             return False
         
         print(f"✅ Tìm thấy {len(chunks)} chunks")

@@ -81,7 +81,7 @@ class RegulationService(BaseService):
         
         # Fallback: Dùng keyword matching nếu vector search không khả dụng hoặc không trả kết quả
         try:
-            chunks = self.chunk_repository.get_all_document_chunks()
+            chunks = self.chunk_repository.get_document_chunks_by_owner_type("regulation")
             
             if not chunks:
                 return ""
@@ -122,19 +122,27 @@ class RegulationService(BaseService):
 
         # 2. Augmentation & Generation
         prompt = f"""
-        Bạn là chuyên gia về quy chế đào tạo tại Đại học Sài Gòn (SGU).
-        Nhiệm vụ của bạn là giải đáp thắc mắc của sinh viên dựa trên các đoạn văn bản quy chế dưới đây.
+Bạn là chuyên gia tư vấn Quy chế Đào tạo tại Đại học Sài Gòn (SGU).
+Nhiệm vụ của bạn là phân tích "Ngữ cảnh được cung cấp" và trả lời "Câu hỏi của sinh viên".
 
-        Ngữ cảnh quy chế:
-        {context}
+Ngữ cảnh được cung cấp (Có thể bao gồm cả thông tin quy chế và tài liệu không liên quan):
+{context}
 
-        Câu hỏi của sinh viên: "{user_query}"
+Câu hỏi của sinh viên: "{user_query}"
 
-        Yêu cầu:
-        1. Trả lời chính xác, căn cứ vào nội dung được cung cấp.
-        2. Trích dẫn rõ (ví dụ: "Theo Điều X...") nếu thông tin có sẵn trong ngữ cảnh.
-        3. Nếu thông tin không có trong ngữ cảnh, hãy nói "Tôi không tìm thấy thông tin này trong quy chế hiện tại".
-        4. Giọng điệu chuyên nghiệp, rõ ràng, dễ hiểu cho sinh viên.
+---
+QUY TRÌNH XỬ LÝ:
+Bước 1: Phân loại thông tin trong "Ngữ cảnh". Chỉ giữ lại các nội dung liên quan đến văn bản hành chính, quy định, điều khoản đào tạo của SGU. Loại bỏ các kiến thức học thuật hoặc bài giảng.
+Bước 2: Đối chiếu câu hỏi với các nội dung quy chế đã lọc.
+Bước 3: Tổng hợp câu trả lời.
+
+YÊU CẦU ĐẦU RA:
+1. Tập trung tuyệt đối: Chỉ trình bày câu trả lời dựa trên thông tin Quy chế tìm thấy. 
+2. Tuyệt đối im lặng về tài liệu rác: Không đề cập, không giải thích và không liệt kê các tài liệu không liên quan (ví dụ: tài liệu học thuật, code, LangChain...) có trong ngữ cảnh. 
+3. Xử lý khi thiếu thông tin: 
+   - Nếu có thông tin: Trả lời thẳng vào vấn đề + Trích dẫn Điều/Khoản.
+   - Nếu hoàn toàn không có thông tin quy chế: Chỉ trả lời duy nhất câu "Rất tiếc, thông tin này không nằm trong phạm vi quy chế đào tạo mà tôi được cung cấp."
+4. Không giải thích quy trình: Không nói "Dựa trên ngữ cảnh được cung cấp..." hay "Phần còn lại là tài liệu học thuật...". Hãy trả lời trực tiếp như một cán bộ tư vấn.
         """
 
         try:
