@@ -7,6 +7,7 @@ from uuid import uuid4
 from services.chat_session_service import ChatSessionService
 from services.chat_message_service import ChatMessageService
 from services.nlp_service import NLPService
+from services.user_service import UserService
 from models.chat_session_model import ChatSessionModel
 from models.chat_message_model import ChatMessageModel
 from fastapi import HTTPException
@@ -49,7 +50,39 @@ Câu hỏi sinh viên:
     def __init__(self):
         self.chat_session_service = ChatSessionService()
         self.chat_message_service = ChatMessageService()
+        self.user_service = UserService()
         self._nlp_service = None
+
+    def _normalize_user_ref(self, value: str) -> str:
+        return str(value or "").strip()
+
+    def _resolve_user_id(self, user_ref: str) -> str:
+        clean_ref = self._normalize_user_ref(user_ref)
+        if not clean_ref:
+            return clean_ref
+
+        try:
+            user = self.user_service.get_user_by_userCode(clean_ref)
+            if user and user.get_id():
+                return str(user.get_id()).strip()
+        except Exception:
+            pass
+
+        return clean_ref
+
+    def _build_user_id_candidates(self, user_ref: str) -> list[str]:
+        clean_ref = self._normalize_user_ref(user_ref)
+        candidates = [clean_ref]
+        resolved_id = self._resolve_user_id(clean_ref)
+        if resolved_id not in candidates:
+            candidates.append(resolved_id)
+        return candidates
+
+    def _require_user_id(self, user_ref: str) -> str:
+        user_id = self._resolve_user_id(user_ref)
+        if not user_id:
+            raise HTTPException(status_code=400, detail="Thiếu thông tin user")
+        return user_id
 
     def _get_nlp_service(self):
         if self._nlp_service is None:
@@ -101,12 +134,13 @@ Câu hỏi sinh viên:
     def create_bot_escalation_session(self, user_id: str, message: str, transcript: str) -> dict:
         """Tạo phiên chuyển tiếp từ bot sang admin, kèm trích dẫn lịch sử chat bot"""
         try:
+            clean_user_id = self._require_user_id(user_id)
             session_id = str(uuid4())
             now = datetime.now(timezone.utc)
 
             help_session = ChatSessionModel(
                 id=session_id,
-                userId=user_id,
+                userId=clean_user_id,
                 channel=self.BOT_ESCALATION_CHANNEL,
                 persona="admin_support",
                 sessionStatus="active",
@@ -185,7 +219,7 @@ Câu hỏi sinh viên:
     def get_bot_escalation_sessions_by_user(self, user_id: str, include_closed: bool = True, limit: int = 50) -> dict:
         """Lấy danh sách phiên chuyển tiếp botchat theo sinh viên"""
         try:
-            normalized_user_id = str(user_id).strip()
+            normalized_user_id = self._require_user_id(user_id)
             sessions = self.chat_session_service.get_sessions_by_channel(self.BOT_ESCALATION_CHANNEL)
             sessions = [s for s in sessions if str(s.get_userId()).strip() == normalized_user_id]
             sessions = sorted(
@@ -255,8 +289,9 @@ Câu hỏi sinh viên:
     def send_bot_escalation_message(self, session_id: str, user_id: str, message: str) -> dict:
         """Sinh viên gửi thêm tin nhắn trong phiên chuyển tiếp botchat"""
         try:
+            normalized_user_id = self._require_user_id(user_id)
             session = self.chat_session_service.get_chat_session(session_id)
-            if not session or session.get_channel() != self.BOT_ESCALATION_CHANNEL or session.get_userId() != user_id:
+            if not session or session.get_channel() != self.BOT_ESCALATION_CHANNEL or str(session.get_userId()).strip() != normalized_user_id:
                 raise HTTPException(status_code=404, detail="Phiên chuyển tiếp botchat không tìm thấy")
 
             now = datetime.now(timezone.utc)
@@ -366,13 +401,14 @@ Câu hỏi sinh viên:
             dict: Chứa thông tin session vừa tạo
         """
         try:
+            clean_user_id = self._require_user_id(user_id)
             # Tạo session chat mới cho help request
             session_id = str(uuid4())
             now = datetime.now(timezone.utc)
             
             help_session = ChatSessionModel(
                 id=session_id,
-                userId=user_id,
+                userId=clean_user_id,
                 channel="help_request",  # Phân biệt loại session
                 persona="admin_support",
                 sessionStatus="active",
@@ -425,9 +461,10 @@ Câu hỏi sinh viên:
             dict: Xác nhận tin nhắn đã được lưu
         """
         try:
+            normalized_user_id = self._require_user_id(user_id)
             # Xác minh session tồn tại
             session = self.chat_session_service.get_chat_session(session_id)
-            if not session or session.get_userId() != user_id:
+            if not session or str(session.get_userId()).strip() != normalized_user_id:
                 raise HTTPException(status_code=404, detail="Phiên hỗ trợ không tìm thấy")
             
             now = datetime.now(timezone.utc)
@@ -472,8 +509,9 @@ Câu hỏi sinh viên:
             dict: Xác nhận kết thúc session
         """
         try:
+            normalized_user_id = self._require_user_id(user_id)
             session = self.chat_session_service.get_chat_session(session_id)
-            if not session or session.get_userId() != user_id:
+            if not session or str(session.get_userId()).strip() != normalized_user_id:
                 raise HTTPException(status_code=404, detail="Phiên hỗ trợ không tìm thấy")
             
             # Cập nhật trạng thái session
@@ -506,8 +544,9 @@ Câu hỏi sinh viên:
             dict: Chứa lịch sử tin nhắn
         """
         try:
+            normalized_user_id = self._require_user_id(user_id)
             session = self.chat_session_service.get_chat_session(session_id)
-            if not session or session.get_userId() != user_id:
+            if not session or str(session.get_userId()).strip() != normalized_user_id:
                 raise HTTPException(status_code=404, detail="Phiên hỗ trợ không tìm thấy")
             
             # Lấy lịch sử tin nhắn từ session này
@@ -573,7 +612,7 @@ Câu hỏi sinh viên:
     def get_help_sessions_by_user(self, user_id: str, include_closed: bool = True, limit: int = 50) -> dict:
         """Lấy danh sách phiên hỗ trợ theo user để sinh viên xem lại lịch sử"""
         try:
-            normalized_user_id = str(user_id).strip()
+            normalized_user_id = self._require_user_id(user_id)
             sessions = self.chat_session_service.get_sessions_by_channel("help_request")
             sessions = [s for s in sessions if str(s.get_userId()).strip() == normalized_user_id]
             sessions = sorted(

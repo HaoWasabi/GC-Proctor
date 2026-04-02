@@ -12,6 +12,8 @@ from services.chat_orchestration_service import ChatOrchestrationService
 from services.exam_schedule_service import ExamScheduleService
 from services.study_service import StudyService
 from services.help_request_service import HelpRequestService
+from services.user_service import UserService
+from utils.study_content_utils import generate_flashcards_markdown, generate_mindmap_markdown
 import os
 import warnings
 
@@ -41,6 +43,7 @@ def get_services():
         "exam_schedule_svc": ExamScheduleService(),
         "study_svc": StudyService(),
         "help_request_service": HelpRequestService(),
+        "user_svc": UserService(),
     }
 
 services = get_services()
@@ -51,6 +54,7 @@ chat_service = services["chat_service"]
 exam_schedule_svc = services["exam_schedule_svc"]
 study_svc = services["study_svc"]
 help_request_service = services["help_request_service"]
+user_svc = services["user_svc"]
 
 # Khởi tạo các biến trạng thái (Session State) để lưu lịch sử và điều hướng
 if "page" not in st.session_state:
@@ -77,6 +81,12 @@ if "chat_bot_guidance" not in st.session_state:
 # Khởi tạo student_id cho session (dùng cho tra cứu lịch thi)
 if "student_id" not in st.session_state:
     st.session_state.student_id = None
+if "user_code" not in st.session_state:
+    st.session_state.user_code = None
+if "user_id" not in st.session_state:
+    st.session_state.user_id = None
+if "full_name" not in st.session_state:
+    st.session_state.full_name = None
 
 
 # Khởi tạo state cho yêu cầu hỗ trợ
@@ -100,6 +110,57 @@ def navigate_to(page_name, role=None):
     st.session_state.page = page_name
     if role:
         st.session_state.role = role
+
+
+def logout_portal_user():
+    st.session_state.role = None
+    st.session_state.page = "home"
+    st.session_state.student_id = None
+    st.session_state.user_code = None
+    st.session_state.user_id = None
+    st.session_state.full_name = None
+
+
+def authenticate_portal_user(user_code: str, password: str, selected_role: str):
+    normalized_user_code = _safe_str(user_code)
+    normalized_role = _safe_str(selected_role).lower()
+
+    if not normalized_user_code:
+        return False, "Vui lòng nhập mã số.", None
+
+    matched_user = None
+    lookup_variants = [normalized_user_code, normalized_user_code.upper(), normalized_user_code.lower()]
+    if hasattr(user_svc, "get_user_by_userCode"):
+        for candidate in lookup_variants:
+            if candidate:
+                matched_user = user_svc.get_user_by_userCode(candidate)
+                if matched_user:
+                    break
+    if not matched_user:
+        for user in user_svc.get_all_users():
+            if _safe_str(user.get_userCode()).lower() == normalized_user_code.lower():
+                matched_user = user
+                break
+
+    if not matched_user:
+        return False, "Không tìm thấy tài khoản với mã số này.", None
+
+    if _safe_str(matched_user.get_role()).lower() != normalized_role:
+        return False, "Role đã chọn không khớp với tài khoản.", None
+
+    if not _as_bool(matched_user.get_state(), default=True):
+        return False, "Tài khoản đang bị khóa.", None
+
+    return (
+        True,
+        None,
+        {
+            "user_id": _safe_str(matched_user.get_id()),
+            "user_code": _safe_str(matched_user.get_userCode()).upper(),
+            "role": _safe_str(matched_user.get_role()).lower(),
+            "full_name": _safe_str(matched_user.get_fullName()),
+        },
+    )
 
 def _safe_str(value) -> str:
     if value is None:
@@ -138,9 +199,18 @@ def _get_open_help_request_count() -> int:
 with st.sidebar:
     st.title("🛡️ GC-Proctor")
     st.markdown("---")
+
+    if st.session_state.role:
+        role_label = "Sinh viên" if st.session_state.role == "student" else "Admin"
+        st.caption(f"Đang đăng nhập: {st.session_state.get('user_code', 'N/A')} ({role_label})")
+        if st.button("🚪 Đăng xuất", width="stretch"):
+            logout_portal_user()
+            st.rerun()
+        st.markdown("---")
     
     if st.button("🏠 Đổi vai trò (Trang chủ)", width="stretch"):
-        navigate_to("home", None)
+        logout_portal_user()
+        st.rerun()
     
     st.markdown("---")
     
@@ -261,24 +331,50 @@ def render_chat_ui(chat_history_key, title, subtitle, is_rag=False, is_exam_look
 
 if st.session_state.page == "home":
     st.markdown("<h1 style='text-align: center;'>Chào mừng đến với hệ thống GC-Proctor</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center;'>Vui lòng chọn cổng đăng nhập của bạn</p><br><br>", unsafe_allow_html=True)
-    
-    col1, col2, col3, col4 = st.columns([1, 2, 2, 1])
-    
+    st.markdown("<p style='text-align: center;'>Đăng nhập bằng mã số, mật khẩu và chọn đúng role.</p><br>", unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+
     with col2:
-        st.info("### 👨‍🎓 Dành cho Sinh viên\nTra cứu quy chế, xem lịch thi cá nhân và ôn tập cùng AI.")
-        if st.button("Truy cập Cổng Sinh viên", width="stretch", type="primary"):
-            navigate_to("student_home", "student")
-            st.rerun()
-            
-    with col3:
-        st.error("### 👨‍💻 Dành cho Admin\nQuản lý dữ liệu lịch thi, cấu hình quy chế và upload tài liệu RAG.")
-        if st.button("Truy cập Cổng Quản trị", width="stretch", type="primary"):
-            navigate_to("admin_home", "admin")
-            st.rerun()
+        st.info("### 🔐 Đăng nhập hệ thống\nSinh viên sẽ vào trang chủ sinh viên, Admin sẽ vào trang chủ quản trị.")
+        with st.form("portal_login_form", clear_on_submit=False):
+            login_user_code = st.text_input("Mã số", placeholder="VD: 3122410001 hoặc AD001")
+            login_password = st.text_input("Mật khẩu", type="password", placeholder="Nhập gì cũng được")
+            st.caption("Mật khẩu chỉ là trường mô phỏng, hệ thống sẽ dùng mã số để xác định thông tin sinh viên/admin.")
+            login_role = st.selectbox(
+                "Role",
+                options=["student", "admin"],
+                format_func=lambda role: "Sinh viên" if role == "student" else "Admin",
+            )
+            submitted = st.form_submit_button("Đăng nhập", use_container_width=True, type="primary")
+
+            if submitted:
+                ok, error_message, user_payload = authenticate_portal_user(
+                    login_user_code,
+                    login_password,
+                    login_role,
+                )
+                if not ok:
+                    st.error(f"❌ {error_message}")
+                else:
+                    st.session_state.role = user_payload["role"]
+                    st.session_state.user_id = user_payload["user_id"]
+                    st.session_state.user_code = user_payload["user_code"]
+                    st.session_state.full_name = user_payload["full_name"]
+
+                    # Lưu mã sinh viên cho toàn bộ các tính năng cần student_id.
+                    if user_payload["role"] == "student":
+                        st.session_state.student_id = user_payload["user_code"]
+                        navigate_to("student_home", "student")
+                    else:
+                        st.session_state.student_id = None
+                        navigate_to("admin_home", "admin")
+                    st.rerun()
 
 elif st.session_state.page == "student_home":
     st.header("👋 Xin chào Sinh viên!")
+    if st.session_state.get("student_id"):
+        st.caption(f"Mã sinh viên đang sử dụng: {st.session_state.get('student_id')}")
     st.markdown("Hôm nay bạn muốn tôi hỗ trợ tính năng gì?")
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -312,30 +408,40 @@ elif st.session_state.page == "chat_quyche":
 
 elif st.session_state.page == "chat_lichthi":
     st.header("📅 Lịch thi & Trợ lý Khảo thí")
-    
-    st.info("ℹ️ Vui lòng nhập Mã số sinh viên của bạn để tra cứu lịch thi cá nhân:")
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        new_student_id = st.text_input(
-            "Mã số sinh viên (VD: u004)",
-            value=st.session_state.get("student_id", ""),
-            key="student_id_input"
-        )
-        if new_student_id and new_student_id != st.session_state.get("student_id"):
-            st.session_state.student_id = new_student_id
-    
-    with col2:
-        if st.button("🔄 Cập nhật", width="stretch"):
+
+    student_id = _safe_str(st.session_state.get("student_id"))
+    if not student_id:
+        st.error("⚠️ Chưa có mã sinh viên trong phiên đăng nhập. Vui lòng đăng nhập lại bằng tài khoản sinh viên.")
+        if st.button("↩️ Quay về trang đăng nhập", use_container_width=True):
+            navigate_to("home", None)
             st.rerun()
+        st.stop()
+
+    st.info(f"ℹ️ Bạn đang tra cứu theo Mã sinh viên: **{student_id}**")
     
     st.divider()
     
     st.markdown("##### Bảng lịch thi sắp tới:")
-    df_exams = pd.DataFrame([
-        {"Môn thi": "PRM392", "Ngày thi": "15/05/2026", "Giờ thi": "07:30 AM", "Phòng": "P.202 Alpha", "Hình thức": "Thực hành (PE)"},
-        {"Môn thi": "SWE201", "Ngày thi": "18/05/2026", "Giờ thi": "09:45 AM", "Phòng": "P.101 Beta", "Hình thức": "Lý thuyết (FE)"},
-    ])
-    st.dataframe(df_exams, hide_index=True) 
+    try:
+        upcoming_exams = exam_schedule_svc.get_upcoming_exams(student_id)
+        if upcoming_exams:
+            df_exams = pd.DataFrame(
+                [
+                    {
+                        "Mã môn thi": exam.get("examId", ""),
+                        "Ngày thi": exam.get("examDate", ""),
+                        "Giờ thi": exam.get("startTime", ""),
+                        "Phòng": exam.get("room", ""),
+                        "Trạng thái": exam.get("status", ""),
+                    }
+                    for exam in upcoming_exams
+                ]
+            )
+            st.dataframe(df_exams, hide_index=True, use_container_width=True)
+        else:
+            st.info("Chưa có lịch thi nào được gán cho mã sinh viên này trong database.")
+    except Exception as e:
+        st.error(f"Không thể tải lịch thi từ database: {e}")
     st.divider()
     
     render_chat_ui("chat_lichthi", "🤖 Hỏi đáp lịch thi", "Bạn có thắc mắc gì về danh sách môn thi ở trên không?", is_exam_lookup=True)
@@ -450,31 +556,12 @@ elif st.session_state.page == "chat_ontap":
                         # --- NHÁNH 3: VẼ SƠ ĐỒ ---
                         elif "ACTION_MINDMAP" in llm_response:
                             message_placeholder.markdown("🌳 *Đang cầm cọ vẽ sơ đồ tư duy, đợi xíu nha...*")
-                            if not chunks:
-                                ai_response = "⚠️ Úi, hệ thống chưa có tài liệu phần này nên mình không vẽ sơ đồ được. Bạn upload thêm nha!"
-                            else:
-                                map_prompt = f"Vẽ sơ đồ (mindmap/graph) cho: {prompt}. BẮT BUỘC TRẢ VỀ CÚ PHÁP MERMAID JS BẮT ĐẦU BẰNG `graph TD` hoặc `mindmap`. KHÔNG bọc markdown.\nNỘI DUNG:\n{context}"
-                                import json, requests, base64
-                                mermaid_code = study_svc.model.generate_content(map_prompt).text.replace("```mermaid", "").replace("```", "").strip()
-                                payload = {"code": mermaid_code, "mermaid": {"theme": "default"}}
-                                b64 = base64.b64encode(json.dumps(payload).encode('utf-8')).decode('utf-8')
-                                img_url = f"https://mermaid.ink/img/{b64}"
-                                res_img = requests.get(img_url)
-                                if res_img.status_code == 200:
-                                    ai_response = f"🎉 **Tèn ten! Sơ đồ của bạn đây:**\n\n![Mindmap]({img_url})"
-                                else:
-                                    ai_response = f"⚠️ Lỗi vẽ ảnh (Code {res_img.status_code}). Cú pháp bị kẹt:\n```mermaid\n{mermaid_code}\n```"
+                            ai_response = generate_mindmap_markdown(study_svc, prompt, context, chunks)
                         
                         # --- NHÁNH 4: TẠO FLASHCARD ---
                         elif "ACTION_FLASHCARD" in llm_response:
                             message_placeholder.markdown("🗂️ *Đang soạn thẻ ghi nhớ cho bạn đây...*")
-                            res = study_svc.generate_flashcards("ALL", prompt)
-                            if "flashcards" in res and len(res["flashcards"]) > 0:
-                                ai_response = f"**🎉 Ta-da! Bộ thẻ Flashcard cho bạn nè:**\n\n"
-                                for i, card in enumerate(res["flashcards"], 1):
-                                    ai_response += f"**Q{i}:** {card.get('question', '')}\n> **A{i}:** {card.get('answer', '')}\n\n---\n"
-                            else:
-                                ai_response = f"⚠️ Tiếc quá, mình không tìm thấy đủ dữ liệu để tạo flashcard. Bạn cho mình thêm tài liệu nha!"
+                            ai_response = generate_flashcards_markdown(study_svc, prompt)
 
                         # --- NHÁNH 5: TRẢ LỜI BÌNH THƯỜNG ---
                         else:
@@ -491,19 +578,19 @@ elif st.session_state.page == "chat_bot_guidance":
     st.header("🤖 Trợ lý vận hành sinh viên")
     st.caption("Bot trả lời trước về cách sử dụng chức năng. Nếu chưa rõ, bấm Hỏi admin dưới câu trả lời.")
 
-    col_id, col_refresh = st.columns([3, 1])
-    with col_id:
-        new_student_id = st.text_input(
-            "Mã số sinh viên",
-            value=st.session_state.get("student_id", ""),
-            placeholder="Ví dụ: SE160001",
-            key="bot_guidance_student_id",
-        )
-        if new_student_id and new_student_id != st.session_state.get("student_id"):
-            st.session_state.student_id = new_student_id
-    with col_refresh:
-        if st.button("🔄 Làm mới", use_container_width=True, key="bot_guidance_refresh"):
+    user_code = _safe_str(st.session_state.get("user_code"))
+    user_id = _safe_str(st.session_state.get("user_id"))
+    if not user_code or not user_id:
+        st.error("⚠️ Thiếu thông tin phiên đăng nhập (userCode/userId). Vui lòng đăng nhập lại.")
+        if st.button("↩️ Quay về trang đăng nhập", use_container_width=True, key="bot_guidance_back_to_login"):
+            navigate_to("home", None)
             st.rerun()
+        st.stop()
+
+    st.info(f"ℹ️ Mã đăng nhập đang dùng cho chức năng hỗ trợ: **{user_code}**")
+
+    if st.button("🔄 Làm mới", use_container_width=True, key="bot_guidance_refresh"):
+        st.rerun()
 
     active_escalation_id = _safe_str(st.session_state.get("bot_escalation_session_id"))
     bot_locked_after_handoff = bool(active_escalation_id)
@@ -526,7 +613,7 @@ elif st.session_state.page == "chat_bot_guidance":
             with st.chat_message("assistant"):
                 with st.spinner("Bot đang phân tích câu hỏi..."):
                     result = help_request_service.get_guidance_response(
-                        _safe_str(st.session_state.get("student_id")),
+                        user_code,
                         prompt,
                     )
                     answer = result.get("answer", "")
@@ -554,16 +641,15 @@ elif st.session_state.page == "chat_bot_guidance":
                 )
                 sent = st.form_submit_button("Gửi cho admin", use_container_width=True)
                 if sent:
-                    student_id = _safe_str(st.session_state.get("student_id"))
-                    if not student_id:
-                        st.error("⚠️ Vui lòng nhập Mã số sinh viên trước khi gửi admin.")
+                    if not user_id:
+                        st.error("⚠️ Không tìm thấy userId trong phiên đăng nhập.")
                     elif not _safe_str(admin_message):
                         st.error("⚠️ Vui lòng nhập nội dung gửi admin.")
                     else:
                         try:
                             transcript = _format_bot_transcript(st.session_state.chat_bot_guidance, max_turns=12)
                             result = help_request_service.create_bot_escalation_session(
-                                student_id,
+                                user_id,
                                 admin_message,
                                 transcript,
                             )
@@ -578,11 +664,10 @@ elif st.session_state.page == "chat_bot_guidance":
 
     st.markdown("---")
     st.markdown("#### 📬 Phiên Hỏi admin từ botchat")
-    student_id = _safe_str(st.session_state.get("student_id"))
-    if student_id:
+    if user_id:
         try:
             bot_sessions_result = help_request_service.get_bot_escalation_sessions_by_user(
-                student_id,
+                user_id,
                 include_closed=True,
                 limit=100,
             )
@@ -617,7 +702,7 @@ elif st.session_state.page == "chat_bot_guidance":
             selected_session = selectable.get(selected_label)
             is_opened = selected_session and selected_session == st.session_state.get("bot_escalation_session_id")
 
-            c1, c2 = st.columns(2)
+            c1, c2, c3 = st.columns(3)
             with c1:
                 if is_opened:
                     if st.button("📁 Đóng phiên đã chọn", use_container_width=True, key="bot_escalation_close_selected"):
@@ -628,6 +713,11 @@ elif st.session_state.page == "chat_bot_guidance":
                         st.session_state.bot_escalation_session_id = selected_session
                         st.rerun()
             with c2:
+                if st.button("➕ Tạo phiên mới", use_container_width=True, key="bot_escalation_create_new_btn"):
+                    st.session_state.bot_escalation_session_id = None
+                    st.session_state.bot_escalate_target_idx = None
+                    st.rerun()
+            with c3:
                 if st.button("🔄 Làm mới danh sách", use_container_width=True, key="bot_escalation_refresh_list"):
                     st.rerun()
         else:
@@ -658,18 +748,31 @@ elif st.session_state.page == "chat_bot_guidance":
                         if ts:
                             st.caption(f"🕒 {ts}")
 
+            st.divider()
             if session_info.get("status") != "closed":
-                msg_to_admin = st.chat_input("Nhắn thêm cho admin trong phiên này...", key="bot_escalation_student_followup")
-                if msg_to_admin:
-                    try:
-                        help_request_service.send_bot_escalation_message(
-                            bot_session_id,
-                            _safe_str(st.session_state.get("student_id")),
-                            msg_to_admin,
-                        )
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"❌ Không thể gửi tin nhắn cho admin: {str(e)}")
+                col_msg, col_end = st.columns([5, 1])
+                with col_msg:
+                    msg_to_admin = st.chat_input("Nhắn thêm cho admin trong phiên này...", key="bot_escalation_student_followup")
+                    if msg_to_admin:
+                        try:
+                            help_request_service.send_bot_escalation_message(
+                                bot_session_id,
+                                user_id,
+                                msg_to_admin,
+                            )
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Không thể gửi tin nhắn cho admin: {str(e)}")
+                with col_end:
+                    student_close_clicked = st.button("❌ Kết thúc", key="bot_escalation_student_close_btn", use_container_width=True)
+                    if student_close_clicked:
+                        try:
+                            help_request_service.end_help_session(bot_session_id, user_id)
+                            st.session_state.bot_escalation_session_id = None
+                            st.success("✅ Đã kết thúc phiên hỗ trợ.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Không thể kết thúc phiên hỗ trợ: {str(e)}")
             else:
                 st.info("Phiên này đã đóng. Bạn có thể tạo yêu cầu mới nếu cần.")
         except Exception as e:

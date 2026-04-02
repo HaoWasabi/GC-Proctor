@@ -4,6 +4,7 @@ from typing import List, Optional
 from google.cloud.firestore_v1.base_query import FieldFilter
 from google.cloud.firestore_v1 import DocumentSnapshot
 from models.exam_schedule_model import ExamScheduleModel
+from repositories.user_repository import UserRepository
 from .base_repository import BaseRepository, logger
 
 
@@ -11,6 +12,7 @@ class ExamScheduleRepository(BaseRepository):
     def __init__(self):
         super().__init__()
         self.collection_name = "exam_schedules"
+        self.user_repository = UserRepository()
 
     def get_exam_schedule(self, schedule_id: str) -> Optional[ExamScheduleModel]:
         try:
@@ -126,12 +128,42 @@ class ExamScheduleRepository(BaseRepository):
     def get_schedules_by_student(self, student_id: str) -> List[ExamScheduleModel]:
         try:
             schedules: List[ExamScheduleModel] = []
-            # Truy vấn Firestore lọc theo studentId
-            docs = self.db.collection(self.collection_name).where(filter=FieldFilter("studentId", "==", student_id)).stream()
-            for doc in docs:
+
+            normalized_student_id = str(student_id or "").strip()
+            student_id_candidates = [normalized_student_id]
+
+            matched_user = self.user_repository.get_user_by_userCode(normalized_student_id)
+            if matched_user:
+                student_id_candidates.append(str(matched_user.get_id()).strip())
+
+            seen_schedule_ids = set()
+            for candidate in student_id_candidates:
+                if not candidate:
+                    continue
+
+                docs = self.db.collection(self.collection_name).where(filter=FieldFilter("studentId", "==", candidate)).stream()
+                for doc in docs:
+                    data = doc.to_dict()
+                    data['id'] = data.get('id', doc.id)
+                    if data['id'] in seen_schedule_ids:
+                        continue
+                    schedules.append(ExamScheduleModel(**data))
+                    seen_schedule_ids.add(data['id'])
+
+            if schedules:
+                return schedules
+
+            # Fallback sâu hơn: quét toàn bộ bản ghi để hỗ trợ dữ liệu cũ/lệch schema
+            for doc in self.db.collection(self.collection_name).stream():
                 data = doc.to_dict()
                 data['id'] = data.get('id', doc.id)
-                schedules.append(ExamScheduleModel(**data))
+                stored_student_id = str(data.get("studentId") or data.get("student_id") or "").strip()
+                if stored_student_id in student_id_candidates:
+                    if data['id'] in seen_schedule_ids:
+                        continue
+                    schedules.append(ExamScheduleModel(**data))
+                    seen_schedule_ids.add(data['id'])
+
             return schedules
         except Exception as e:
             logger.error(f"Error fetching schedules for student {student_id}: {e}")

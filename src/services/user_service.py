@@ -12,6 +12,9 @@ class UserService(BaseService):
     def get_user(self, user_id: str) -> Optional[UserModel]:
         return self.user_repository.get_user(user_id)
     
+    def get_user_by_userCode(self, user_code: str) -> Optional[UserModel]:
+        return self.user_repository.get_user_by_userCode(user_code)
+    
     def get_all_users(self) -> List[UserModel]:
         return self.user_repository.get_all_users()
     
