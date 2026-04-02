@@ -1,6 +1,5 @@
 from datetime import datetime
 from uuid import uuid4
-
 import streamlit as st
 import time
 import pandas as pd
@@ -66,6 +65,8 @@ chat_session_svc = services["chat_session_svc"]
 chat_message_svc = services["chat_message_svc"]
 
 # Khởi tạo các biến trạng thái (Session State) để lưu lịch sử và điều hướng
+if "workspace_content" not in st.session_state:
+    st.session_state.workspace_content = None
 if "page" not in st.session_state:
     st.session_state.page = "home" 
 if "role" not in st.session_state:
@@ -429,7 +430,7 @@ def render_unified_student_chat_page():
                 format_func=lambda key: f"{_mode_icon(key)} {_mode_label(key)}",
             )
             initial_prompt = st.text_area("Prompt khởi tạo", placeholder="Nhập câu hỏi đầu tiên của bạn...", height=120)
-            create_clicked = st.form_submit_button("ạo session và gửi", use_container_width=True, type="primary")
+            create_clicked = st.form_submit_button("Tạo session và gửi", use_container_width=True, type="primary")
 
         if create_clicked:
             if not _safe_str(initial_prompt):
@@ -481,7 +482,7 @@ with st.sidebar:
     if st.session_state.role:
         role_label = "Sinh viên" if st.session_state.role == "student" else "Admin"
         st.caption(f"Đang đăng nhập: {st.session_state.get('user_code', 'N/A')} ({role_label})")
-        if st.button("Đăng xuất", width="stretch"):
+        if st.button("Đăng xuất", use_container_width=True):
             logout_portal_user()
             st.rerun()
     st.markdown("---")
@@ -489,12 +490,12 @@ with st.sidebar:
     # Menu cho Sinh viên
     if st.session_state.role == "student":
         st.caption("DASHBOARD STUDENT")
-        if st.button("✨ Cuộc trò chuyện mới", width="stretch"):
+        if st.button("✨ Cuộc trò chuyện mới", use_container_width=True):
             st.session_state.student_chat_force_new = True
             st.session_state.student_chat_active_session_id = None
             navigate_to("chat_hub")
             st.rerun()
-        if st.button("💬 Đoạn chat hiện tại", width="stretch"):
+        if st.button("💬 Đoạn chat hiện tại", use_container_width=True):
             st.session_state.student_chat_force_new = False
             navigate_to("chat_hub")
             st.rerun()
