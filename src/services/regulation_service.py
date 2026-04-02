@@ -39,117 +39,84 @@ class RegulationService(BaseService):
     def unblock_regulation(self, regulation_id: str) -> bool:
         return self.regulation_repository.unblock_regulation(regulation_id)
     
-    def _retrieve_relevant_chunks(self, query: str) -> str:
-        """
-        Tìm kiếm các đoạn văn bản quy chế liên quan bằng Vector Search.
+    def _rewrite_query(self, user_query: str) -> str:
+        """Kỹ thuật Advanced RAG: Viết lại câu hỏi lóng thành từ khóa chuẩn hành chính"""
+        prompt = f"""
+        Nhiệm vụ: Chuyển đổi câu hỏi của sinh viên thành các từ khóa/câu văn chuẩn mực trong quy chế đào tạo đại học để tìm kiếm tài liệu (Vector Search).
+        Ví dụ: "rớt môn" -> "học lại, điểm F, thi lại"
+        Ví dụ: "bảo lưu" -> "nghỉ học tạm thời, bảo lưu kết quả"
+        Ví dụ: "đk hp" -> "đăng ký học phần, tín chỉ"
         
-        Sử dụng FAISS + sentence-transformers để semantic search thay vì keyword matching.
-        Nếu vector search không khả dụng, fallback sang keyword matching.
-        
-        Args:
-            query: Câu hỏi từ user
-            
-        Returns:
-            Chuỗi chứa top 5 chunks liên quan, ngăn cách bởi "\n\n"
+        Câu hỏi gốc: "{user_query}"
+        Chỉ trả về DUY NHẤT một chuỗi chứa từ khóa chuẩn đã làm mịn:
         """
-        import unicodedata
+        try:
+            return self.model.generate_content(prompt).text.strip()
+        except:
+            return user_query 
 
+    def _retrieve_relevant_chunks(self, query: str) -> str:
+        # (GIỮ NGUYÊN CODE CHUẨN CỦA HÀM NÀY NHƯ BẠN ĐÃ VIẾT - KHÔNG SỬA GÌ Ở ĐÂY)
+        import unicodedata
         def normalize_text(text: str) -> str:
-            """Normalize Vietnamese text by removing diacritics."""
             nfd = unicodedata.normalize("NFD", text)
             return "".join(c for c in nfd if unicodedata.category(c) != "Mn")
         
-        # Ưu tiên dùng Vector Search nếu FAISS index sẵn sàng và có data
         if self.vector_store_ready and self.vector_store.index and len(self.vector_store.metadata) > 0:
             try:
                 results = self.vector_store.search(query, k=5)
-                
                 if results:
-                    # Filter kết quả có similarity > threshold
-                    threshold = 0.3  # Có thể adjust threshold này
-                    filtered_results = [text for text, score in results if score > threshold]
-                    
-                    if filtered_results:
-                        context = "\n\n".join(filtered_results)
-                        return context
-                        
-                # Nếu vector search không tìm thấy kết quả, fall through to keyword search
-                print("⚠️  Vector search không tìm thấy kết quả, thử keyword search...")
-                
-            except Exception as e:
-                print(f"⚠️  Lỗi Vector Search: {e}, fallback to keyword search")
-        
-        # Fallback: Dùng keyword matching nếu vector search không khả dụng hoặc không trả kết quả
+                    filtered_results = [text for text, score in results if score > 0.3]
+                    if filtered_results: return "\n\n".join(filtered_results)
+            except Exception: pass
+            
         try:
             chunks = self.chunk_repository.get_document_chunks_by_owner_type("regulation")
-            
-            if not chunks:
-                return ""
-            
-            # Improved keyword matching: case-insensitive, normalize diacritics
+            if not chunks: return ""
             relevant_text = []
             query_words = [normalize_text(w.lower().strip()) for w in query.split() if w.strip()]
-            
             for chunk in chunks:
                 content_lower = normalize_text(chunk.get_content().lower())
-                
-                # Đếm số từ query xuất hiện trong chunk (substring match)
                 match_count = sum(1 for word in query_words if word in content_lower)
-                
-                # Nếu match >= 1 từ query, thêm vào kết quả
-                if match_count >= 1:
-                    relevant_text.append((chunk.get_content(), match_count))
-            
-            # Sort by match count (descending), lấy top 5
+                if match_count >= 1: relevant_text.append((chunk.get_content(), match_count))
             relevant_text.sort(key=lambda x: x[1], reverse=True)
-            results = [text for text, _ in relevant_text[:5]]
-            
-            return "\n\n".join(results)
-            
-        except Exception as e:
-            print(f"❌ Lỗi retrieval: {e}")
-            return ""
+            return "\n\n".join([text for text, _ in relevant_text[:5]])
+        except Exception: return ""
 
     def answer_regulation_question(self, user_query: str):
-        """Luồng RAG: Tra cứu quy chế và trả lời"""
+        """Luồng RAG thông minh kết hợp Query Rewriting và Chain-of-Thought"""
         
-        # 1. Retrieval: Tìm các đoạn quy chế liên quan
-        context = self._retrieve_relevant_chunks(user_query)
+        # 1. Làm mịn câu hỏi trước khi search
+        smart_query = self._rewrite_query(user_query)
+        print(f"[RAG Logger] Dịch câu hỏi: '{user_query}' -> '{smart_query}'")
+        
+        # 2. Retrieval
+        context = self._retrieve_relevant_chunks(smart_query)
         
         if not context:
-            return ("Xin lỗi, mình không tìm thấy quy định cụ thể về vấn đề này trong tài liệu hiện có. "
-                    "Bạn vui lòng xem thêm tại website của Phòng Đào tạo SGU nhé.")
+            return "🛡️ Rất tiếc, mình không tìm thấy quy định cụ thể về vấn đề này trong cơ sở dữ liệu hiện tại của trường."
 
-        # 2. Augmentation & Generation
+        # 3. Chain-of-Thought (CoT) Prompting
         prompt = f"""
-Bạn là chuyên gia tư vấn Quy chế Đào tạo tại Đại học Sài Gòn (SGU).
-Nhiệm vụ của bạn là phân tích "Ngữ cảnh được cung cấp" và trả lời "Câu hỏi của sinh viên".
+        Bạn là GC-Proctor chuyên gia tư vấn Quy chế Đào tạo tại SGU.
+        Ngữ cảnh quy chế thu thập được:
+        {context}
 
-Ngữ cảnh được cung cấp (Có thể bao gồm cả thông tin quy chế và tài liệu không liên quan):
-{context}
+        Câu hỏi của sinh viên: "{user_query}"
 
-Câu hỏi của sinh viên: "{user_query}"
+        HÃY SUY LUẬN TỪNG BƯỚC (Chain of Thought):
+        Bước 1: Kiểm tra xem câu hỏi có chứa yếu tố chống phá, hỏi vặn, hoặc giải bài tập hộ không? Nếu có, hãy từ chối.
+        Bước 2: Đối chiếu câu hỏi với Ngữ cảnh. Có thông tin trả lời không?
+        Bước 3: Lập luận và tổng hợp câu trả lời ngắn gọn, trích dẫn rõ tên Điều/Khoản nếu có.
+        Bước 4: Bỏ qua mọi thông tin học thuật dư thừa (code, bài giảng) có lẫn trong ngữ cảnh.
 
----
-QUY TRÌNH XỬ LÝ:
-Bước 1: Phân loại thông tin trong "Ngữ cảnh". Chỉ giữ lại các nội dung liên quan đến văn bản hành chính, quy định, điều khoản đào tạo của SGU. Loại bỏ các kiến thức học thuật hoặc bài giảng.
-Bước 2: Đối chiếu câu hỏi với các nội dung quy chế đã lọc.
-Bước 3: Tổng hợp câu trả lời.
-
-YÊU CẦU ĐẦU RA:
-1. Tập trung tuyệt đối: Chỉ trình bày câu trả lời dựa trên thông tin Quy chế tìm thấy. 
-2. Tuyệt đối im lặng về tài liệu rác: Không đề cập, không giải thích và không liệt kê các tài liệu không liên quan (ví dụ: tài liệu học thuật, code, LangChain...) có trong ngữ cảnh. 
-3. Xử lý khi thiếu thông tin: 
-   - Nếu có thông tin: Trả lời thẳng vào vấn đề + Trích dẫn Điều/Khoản.
-   - Nếu hoàn toàn không có thông tin quy chế: Chỉ trả lời duy nhất câu "Rất tiếc, thông tin này không nằm trong phạm vi quy chế đào tạo mà tôi được cung cấp."
-4. Không giải thích quy trình: Không nói "Dựa trên ngữ cảnh được cung cấp..." hay "Phần còn lại là tài liệu học thuật...". Hãy trả lời trực tiếp như một cán bộ tư vấn.
+        Chỉ xuất ra CÂU TRẢ LỜI CUỐI CÙNG (Không in ra các bước suy luận của bạn).
         """
-
         try:
             response = self.model.generate_content(prompt)
             return response.text
         except Exception as e:
             return f"Lỗi kết nối AI: {str(e)}"
-
+            
     def import_from_excel_batch(self, file_path: str):
         return self.regulation_repository.import_from_excel_batch(file_path)

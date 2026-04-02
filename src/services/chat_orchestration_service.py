@@ -1,169 +1,119 @@
-from services.nlp_service import NLPService
+import google.generativeai as genai
 from services.study_service import StudyService
-from services.user_service import UserService
 from services.exam_service import ExamService
-from services.exam_schedule_service import ExamScheduleService
-from services.help_request_service import HelpRequestService
 from services.regulation_service import RegulationService
 from services.kb_service import KBService
-import json
 
 class ChatOrchestrationService:
-    """SIMPLIFIED - Routes user queries to appropriate service"""
+    """MODERN AGENT - Sử dụng Native Function Calling của Gemini"""
 
     def __init__(self):
-        self.nlp_service = NLPService()
         self.study_service = StudyService()
-        self.user_service = UserService()
         self.exam_service = ExamService()
-        self.exam_schedule_service = ExamScheduleService()
         self.regulation_service = RegulationService()
-        self.help_request_service = HelpRequestService()
         self.kb_service = KBService()
 
-    def ask(self, payload: dict, authorization: str = None) -> dict:
-        """Handle user question and route to appropriate service"""
-
-        question = payload.get("question", "")
-        user_id = payload.get("userId", "default_user")
-
-        # Parse intent
-        intent_result = self.nlp_service.parse_intent(question)
-        intent = intent_result.get("intent")
-
-        # Route to appropriate service
-        if intent == "help_request":
-            # Route to help request service
-            result = self.help_request_service.create_help_session(user_id, question)
-            return {
-                "intent": "help_request",
-                "sessionId": result.get("sessionId"),
-                "channel": result.get("channel"),
-                "botResponse": result.get("botResponse"),
-                "timestamp": result.get("timestamp")
-            }
-
-        elif intent == "exam_schedule":
-            answer = self.exam_service.answer_exam_question(user_id, question)
-            return {
-                "intent": "exam_schedule",
-                "answer": {"text": answer},
-                "citations": [],
-            }
-
-        elif intent == "regulation":
-            answer = self.regulation_service.answer_regulation_question(question)
-            return {
-                "intent": "regulation",
-                "answer": {"text": answer},
-                "citations": [],
-            }
+        # Xây dựng Persona cốt lõi
+        self.system_instruction = """
+        Bạn là GC-Proctor 🛡️ - Trợ lý AI Giám thị và Học vụ tận tâm của Đại học Sài Gòn (SGU).
+        Đặc điểm:
+        - Xưng hô "mình" và "bạn" (hoặc "SGU-er"). Luôn dùng icon 🛡️, 📚.
+        - Trả lời ngắn gọn, đi thẳng vào vấn đề. Không dài dòng.
         
-        elif intent == "study_support":
-            # Get user context
-            try:
-                user_info = self.user_service.get_user(user_id)
-                upcoming_exams = self.exam_schedule_service.get_upcoming_exams(user_id)
-            except:
-                user_info = {}
-                upcoming_exams = []
+        Nguyên tắc cốt lõi (BẮT BUỘC):
+        - Bạn được trang bị các CÔNG CỤ (Tools). Hãy ưu tiên tự động gọi các Công Cụ này khi người dùng hỏi về: Tra lịch thi (cần MSSV), Tra quy chế, hoặc Ôn tập bài giảng.
+        - Nếu người dùng hỏi những thứ nằm ngoài giáo dục (Code bài tập hộ, Giải Toán/Lý/Hóa, Tin đồn, Giải trí), HÃY TỪ CHỐI một cách dí dỏm: "🛡️ Chà, GC-Proctor chỉ rành về học vụ và lịch trình SGU thôi. Vấn đề này ngoài chuyên môn của mình rồi SGU-er ơi!"
+        """
 
-            # Process with study service
-            result = self.study_service.process_study_workflow(question, user_info, upcoming_exams)
+        self.agent_model = genai.GenerativeModel(
+            model_name="gemini-2.5-flash",
+            system_instruction=self.system_instruction,
+            tools=[self.tra_cuu_lich_thi, self.tra_cuu_quy_che, self.on_tap_mon_hoc]
+        )
 
-            return {
-                "intent": "study_support",
-                "answer": result.get("answer"),
-                "citations": result.get("citations"),
-                "metadata": result.get("metadata")
-            }
+    # ================= CÁC CÔNG CỤ (TOOLS) CHO AI =================
+    
+    def tra_cuu_lich_thi(self, student_id: str, query: str) -> str:
+        """Công cụ này dùng để lấy dữ liệu lịch thi từ database. Gọi khi sinh viên hỏi lịch thi.
+        Args:
+            student_id: Mã số sinh viên (Ví dụ: u004, 3120410...).
+            query: Câu hỏi gốc của sinh viên (VD: "tuần sau thi môn gì")
+        """
+        if not student_id or student_id.lower() == "null":
+            return "Hãy yêu cầu sinh viên cung cấp Mã số sinh viên (MSSV) để tra cứu."
+        return self.exam_service.answer_exam_question(student_id, query)
+
+    def tra_cuu_quy_che(self, query: str) -> str:
+        """Công cụ dùng để tìm kiếm thông tin về quy chế đào tạo, luật lệ, tín chỉ, điểm số, rớt môn.
+        Args:
+            query: Câu hỏi gốc của sinh viên.
+        """
+        return self.regulation_service.answer_regulation_question(query)
+
+    def on_tap_mon_hoc(self, course_code: str, query: str) -> str:
+        """Công cụ dùng để tìm tài liệu bài giảng và giải đáp ôn tập môn học (RAG môn học).
+        Args:
+            course_code: Mã môn học (Ví dụ: PRM392). Nếu không có, hãy trả về 'NO_COURSE'
+            query: Câu hỏi học thuật của sinh viên.
+        """
+        if course_code == "NO_COURSE" or not course_code:
+             return "Hãy hỏi sinh viên xem họ muốn ôn tập mã môn học nào (VD: PRM392)."
         
+        chunks = self.kb_service.retrieve_relevant_chunks(query, course_code.upper())
+        if chunks and len(chunks) > 0:
+            context_str = "\n\n".join([c.get("content", "") for c in chunks])
+            sys_study = f"Tài liệu môn {course_code}:\n{context_str}\n\nTrả lời dựa trên tài liệu: {query}"
+            return self.study_service.model.generate_content(sys_study).text.strip()
         else:
-            return {
-                "intent": intent,
-                "answer": {"text": "Câu hỏi này không được hỗ trợ. Vui lòng hỏi về ôn tập hoặc yêu cầu trợ giúp."},
-                "citations": []
-            }
-        
-    def process_chat(self, role: str, prompt: str, context: dict) -> dict:
-        """
-        Nhận input từ Streamlit, suy luận ngữ cảnh (Context) và trả về kết quả
-        """
+            return f"Hệ thống chưa có tài liệu cho môn {course_code}. Hãy hướng dẫn sinh viên dùng nút đính kèm để upload tài liệu."
+
+    # ================= LUỒNG XỬ LÝ CHÍNH =================
+
+    def process_chat(self, role: str, prompt: str, context: dict, history: list) -> dict:
+        """Xử lý yêu cầu và duy trì trạng thái ngữ cảnh"""
         result = {
             "answer": "",
-            "context": context  # Trả về context để UI cập nhật
+            "context": context  
         }
 
         try:
             if role == "student":
-                # 1. TRÍCH XUẤT THỰC THỂ & INTENT BẰNG AI
-                sys_router = f"""
-                Bạn là AI Router. Phân tích câu hỏi của sinh viên và trả về DUY NHẤT một chuỗi JSON:
-                {{
-                    "intent": "QUY_CHE" | "LICH_THI" | "ON_TAP" | "GIAO_TIEP",
-                    "student_id": "Mã sinh viên nếu có (vd: u004), hoặc null",
-                    "course_code": "Mã môn học nếu có (vd: PRM392), hoặc null"
-                }}
-                Ngữ cảnh hiện tại: {context}
-                Câu hỏi: "{prompt}"
-                """
+                # 1. Chuyển đổi định dạng Lịch sử Chat của Streamlit sang Gemini
+                gemini_history = []
+                for msg in history:
+                    msg_role = "model" if msg["role"] == "assistant" else "user"
+                    gemini_history.append({"role": msg_role, "parts": [msg["content"]]})
+
+                # Cập nhật thông tin ẩn vào câu hỏi để Agent lấy tham số tự động
+                hidden_context = f"[Ngữ cảnh ẩn - MSSV hiện tại: {context.get('student_id', 'Chưa có')}, Mã Môn: {context.get('course_code', 'Chưa có')}].\n Câu hỏi: "
+                enriched_prompt = hidden_context + prompt
+
+                # 2. Khởi động Agent với khả năng TỰ ĐỘNG GỌI HÀM (enable_automatic_function_calling)
+                chat = self.agent_model.start_chat(
+                    history=gemini_history,
+                    enable_automatic_function_calling=True # Đây là tính năng xịn nhất, AI tự quyết định gọi tools
+                )
                 
-                # SỬ DỤNG ĐÚNG BIẾN self.study_service của bạn
-                router_response = self.study_service.model.generate_content(sys_router).text.strip()
-                router_response = router_response.replace("```json", "").replace("```", "").strip()
-                
+                # 3. Gửi prompt. AI sẽ tự suy luận -> gọi Tool Python tương ứng -> Lấy kết quả -> Sinh câu trả lời cuối cùng
+                response = chat.send_message(enriched_prompt)
+                result["answer"] = response.text
+
+                # 4. Trích xuất lại MSSV hoặc Mã môn từ prompt mới nếu người dùng cung cấp
+                # Dùng một LLM flash siêu nhanh để trích xuất trạng thái nhẹ nhàng (chạy ngầm)
+                extraction_prompt = f"""Trích xuất MSSV (VD: u004, 3120...) và Mã môn học (VD: PRM392) từ câu sau nếu có. 
+                Trả về dạng CSV: MSSV,CourseCode. Nếu không có xuất ra: NONE,NONE. 
+                Câu hỏi: {prompt}"""
                 try:
-                    router_data = json.loads(router_response)
-                except json.JSONDecodeError:
-                    router_data = {"intent": "GIAO_TIEP"}
-
-                intent = router_data.get("intent", "GIAO_TIEP")
-                
-                # Cập nhật bộ nhớ ngữ cảnh (Context)
-                if router_data.get("student_id"): result["context"]["student_id"] = router_data["student_id"]
-                if router_data.get("course_code"): result["context"]["course_code"] = router_data["course_code"].upper()
-
-                c_student_id = result["context"].get("student_id")
-                c_course_code = result["context"].get("course_code")
-
-                # 2. ĐIỀU HƯỚNG TÁC VỤ VÀO CÁC SERVICES GỐC CỦA BẠN
-                if intent == "LICH_THI":
-                    if not c_student_id:
-                        result["answer"] = "Để tra cứu lịch thi, bạn vui lòng cho mình biết **Mã số sinh viên** nhé (Ví dụ: u004)!"
-                    else:
-                        result["answer"] = self.exam_service.answer_exam_question(c_student_id, prompt)
-
-                elif intent == "QUY_CHE":
-                    result["answer"] = self.regulation_service.answer_regulation_question(prompt)
-
-                elif intent == "ON_TAP":
-                    if not c_course_code:
-                        result["answer"] = "Bạn muốn ôn tập môn nào nhỉ? (Gõ mã môn, ví dụ: PRM392)"
-                    else:
-                        # Tìm trong VectorDB
-                        chunks = self.kb_service.retrieve_relevant_chunks(prompt, c_course_code)
-                        if chunks and len(chunks) > 0:
-                            context_str = "\n\n".join([c.get("content", "") for c in chunks])
-                            sys_study = f"Tài liệu môn {c_course_code}:\n{context_str}\n\nHãy trả lời câu hỏi: {prompt}"
-                            result["answer"] = self.study_service.model.generate_content(sys_study).text.strip()
-                        else:
-                            recs = self.study_service.get_recommendations(c_course_code)
-                            ans = f"⚠️ Hệ thống chưa có dữ liệu bài giảng phần này cho môn **{c_course_code}**.\n\n"
-                            if recs:
-                                ans += "Bạn tham khảo link tài liệu sau:\n" + "\n".join([f"- [{m['title']}]({m['url']})" for m in recs])
-                            ans += "\n\n💡 Hoặc bạn có thể **mở mục 📎 Đính kèm phía trên** để tải file PDF/DOCX của môn học này lên nhé!"
-                            result["answer"] = ans
-
-                else:
-                    result["answer"] = self.study_service.model.generate_content(f"Trả lời thân thiện: {prompt}").text.strip()
+                    ext = self.study_service.model.generate_content(extraction_prompt).text.strip().split(',')
+                    if len(ext) == 2:
+                        if ext[0].strip() != "NONE": result["context"]["student_id"] = ext[0].strip()
+                        if ext[1].strip() != "NONE": result["context"]["course_code"] = ext[1].strip().upper()
+                except: pass
 
             elif role == "admin":
-                if "thêm" in prompt.lower() and "lịch" in prompt.lower():
-                    result["answer"] = "Đang kết nối Firebase Service để thêm lịch thi..."
-                else:
-                    result["answer"] = "Đã nhận lệnh Quản trị viên."
+                result["answer"] = "Đã nhận lệnh Quản trị viên."
 
         except Exception as e:
-            result["answer"] = f"❌ Lỗi xử lý AI (Backend): {str(e)}"
+            result["answer"] = f"❌ Lỗi xử lý Agent AI: {str(e)}"
 
         return result

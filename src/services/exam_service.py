@@ -34,51 +34,37 @@ class ExamService(BaseService):
         return self.exam_repository.unblock_exam(exam_id)
     
     def _get_raw_exam_data(self, student_id: str) -> str:
-            """Truy vấn dữ liệu từ Firestore và chuyển thành văn bản ngữ cảnh"""
-            schedules = self.schedule_repo.get_schedules_by_student(student_id)
-            print(f"[DEBUG] Querying schedules for student_id='{student_id}', found={len(schedules) if schedules else 0}")
-            
-            if not schedules:
-                # Fallback: Log tất cả studentIds có trong DB để debug
-                all_schedules = self.schedule_repo.get_all_exam_schedules()
-                if all_schedules:
-                    existing_student_ids = set([s.get_studentId() for s in all_schedules])
-                    print(f"[DEBUG] No schedules found for {student_id}. Existing StudentIds in DB: {existing_student_ids}")
-                    return f"Không tìm thấy lịch thi cho mã sinh viên '{student_id}'. Mã sinh viên có trong hệ thống: {', '.join(sorted(existing_student_ids))}"
-                
-                return "Không tìm thấy lịch thi."
+        schedules = self.schedule_repo.get_schedules_by_student(student_id)
+        
+        if not schedules:
+            return "Không tìm thấy lịch thi."
 
-            context_parts = []
-            for s in schedules:
-                exam = self.exam_repository.get_exam(s.get_examId())
-                course_info = exam.get_courseId() if exam else "Môn học"
-                info = f"- Môn: {course_info}, Ngày: {s.get_examDate()}, Phòng: {s.get_room()}, Giờ: {s.get_startTime()}, Trạng thái: {s.get_status()}"
-                context_parts.append(info)
-                
-            return "\n".join(context_parts)
+        context_parts = []
+        for s in schedules:
+            exam = self.exam_repository.get_exam(s.get_examId())
+            course_info = exam.get_courseId() if exam else "Môn học"
+            info = f"- Môn: {course_info}, Ngày: {s.get_examDate()}, Phòng: {s.get_room()}, Giờ: {s.get_startTime()}, Trạng thái: {s.get_status()}"
+            context_parts.append(info)
+            
+        return "\n".join(context_parts)
 
     def answer_exam_question(self, student_id: str, user_query: str):
-        """Luồng RAG chính: Retrieval -> Augmentation -> Generation"""
-        
-        # 1. Retrieval: Lấy dữ liệu thực tế từ hệ thống
+        """Luồng RAG với Persona mạnh mẽ"""
         context = self._get_raw_exam_data(student_id)
         
-        # 2. Augmentation: Xây dựng Prompt với Persona thân thiện
+        # Áp dụng tính cách GC-Proctor
         prompt = f"""
-        Bạn là trợ lý ảo GC-Proctor, hỗ trợ sinh viên tra cứu lịch thi. 
-        Hãy trả lời bằng giọng điệu thân thiện, hỗ trợ.
-
-        Dữ liệu lịch thi hiện tại của sinh viên {student_id}:
+        Bạn là giám thị ảo GC-Proctor 🛡️. Nhiệm vụ của bạn là báo lịch thi.
+        Dữ liệu lịch thi trong hệ thống của sinh viên mã {student_id}:
         {context}
 
         Câu hỏi của sinh viên: "{user_query}"
 
         Yêu cầu:
-        - Chỉ trả lời dựa trên dữ liệu được cung cấp.
-        - Nếu không thấy thông tin, hãy hướng dẫn sinh viên liên hệ phòng đào tạo.
-        - Định dạng câu trả lời rõ ràng, dễ nhìn.
+        - Báo lịch chính xác dựa trên Dữ liệu cung cấp. 
+        - Giọng văn: Nghiêm túc nhưng thân thiện, xưng "mình", gọi sinh viên là "bạn". Có thể chúc thi tốt.
+        - Nếu "Không tìm thấy lịch thi", hãy khuyên bạn ấy liên hệ phòng đào tạo.
         """
 
-        # 3. Generation: Gọi Gemini để sinh câu trả lời
         response = self.model.generate_content(prompt)
         return response.text
