@@ -215,20 +215,20 @@ STUDENT_CHAT_MODES = {
     "regulation": {
         "label": "Tra cuu quy che",
         "icon": "📘",
-        "welcome": "Xin chao! Toi la tro ly Quy che. Ban muon hoi dieu khoan nao?",
-        "spinner": "Dang tra cuu quy che...",
+        "welcome": "Xin chào! Tôi là trợ lý Quy chế. Bạn muốn hỏi điều khoản nào?",
+        "spinner": "Đang tra cứu quy chế...",
     },
     "exam": {
         "label": "Lich thi",
         "icon": "🗓️",
-        "welcome": "Xin chao! Toi la tro ly Lich thi. Ban can kiem tra lich thi nao?",
-        "spinner": "Dang tra cuu lich thi...",
+        "welcome": "Xin chào! Tôi là trợ lý Lịch thi. ạn cần kiểm tra lịch thi nào?",
+        "spinner": "Đang tra cứu lịch thi...",
     },
     "study": {
         "label": "On tap",
         "icon": "📚",
-        "welcome": "Xin chao! Toi la tro ly On tap. Ban dang can on chu de gi?",
-        "spinner": "Dang tim noi dung on tap...",
+        "welcome": "Xin chào! Tôi là trợ lý Ôn tập. Bạn đang cần ôn chủ đề gì?",
+        "spinner": "Đang tìm nội dung ôn tập...",
     },
 }
 
@@ -306,7 +306,7 @@ def _append_chat_message(session_id: str, sender_type: str, content: str, mode: 
     )
     created_id = chat_message_svc.create_chat_message(message)
     if not created_id:
-        raise RuntimeError("Khong luu duoc chat message")
+        raise RuntimeError("Không lưu được tin nhắn chat")
     return created_id
 
 
@@ -379,20 +379,20 @@ def _generate_unified_chat_answer(mode: str, prompt: str, student_id: str):
 
     if mode_key == "exam":
         if not _safe_str(student_id):
-            return "Khong tim thay ma sinh vien trong phien dang nhap. Vui long dang nhap lai.", []
+            return "Không tìm thấy mã sinh viên trong phiên đăng nhập. Vui lòng đăng nhập lại.", []
         answer = exam_service.answer_exam_question(student_id, prompt)
         return answer, []
 
     chunks = kb_service.retrieve_relevant_chunks(prompt, "ALL")
     if not chunks:
-        return "Chua tim thay noi dung phu hop trong kho tai lieu on tap hien co.", []
+        return "Chưa tìm thấy nội dung phù hợp trong kho tài liệu ôn tập hiện có.", []
     context = "\n\n".join([c.get("content", "") for c in chunks])
     sys_prompt = (
-        "Ban la tro ly on tap cho sinh vien. "
-        "Chi duoc phep tra loi dua tren tai lieu duoc cung cap. "
-        "Neu tai lieu khong du de tra loi, hay noi ro dieu do.\n\n"
-        f"TAI LIEU:\n{context}\n\n"
-        f"CAU HOI: {prompt}"
+        "Bạn là trợ lý ôn tập cho sinh viên. "
+        "Chỉ được phép trả lời dựa trên tài liệu được cung cấp. "
+        "Nếu tài liệu không đủ để trả lời, hãy nói rõ điều đó.\n\n"
+        f"TÀI LIỆU:\n{context}\n\n"
+        f"CÂU HỎI: {prompt}"
     )
     response = study_svc.model.generate_content(sys_prompt)
     return response.text, []
@@ -400,12 +400,12 @@ def _generate_unified_chat_answer(mode: str, prompt: str, student_id: str):
 
 def render_unified_student_chat_page():
     st.header("GC Proctor")
-    st.caption("Mot session chi gan voi mot the loai chat. Muon doi the loai, hay tao session moi.")
+    st.caption("Một session chỉ gắn với một thể loại chat. Muốn đổi thể loại, hay tạo session mới.")
 
     user_id = _safe_str(st.session_state.get("user_id"))
     student_id = _safe_str(st.session_state.get("student_id"))
     if not user_id:
-        st.error("Khong tim thay userId trong phien dang nhap. Vui long dang nhap lai.")
+        st.error("Không tìm thấy thông tin người dùng trong phiên đăng nhập. Vui lòng đăng nhập lại.")
         return
 
     sessions = _load_student_sessions(user_id)
@@ -421,19 +421,19 @@ def render_unified_student_chat_page():
         st.session_state.student_chat_active_session_id = active_session_id
 
     if force_new or not active_session_id:
-        st.info("Bat dau bang cach nhap cau hoi dau tien va chon the loai chat session.")
+        st.info("Bắt đầu bằng cách nhập câu hỏi đầu tiên và chọn thể loại chat session.")
         with st.form("new_unified_chat_session_form", clear_on_submit=False):
             selected_mode = st.selectbox(
-                "The loai",
+                "Thể loại",
                 options=list(STUDENT_CHAT_MODES.keys()),
                 format_func=lambda key: f"{_mode_icon(key)} {_mode_label(key)}",
             )
-            initial_prompt = st.text_area("Prompt khoi tao", placeholder="Nhap cau hoi dau tien cua ban...", height=120)
-            create_clicked = st.form_submit_button("Tao session va gui", use_container_width=True, type="primary")
+            initial_prompt = st.text_area("Prompt khởi tạo", placeholder="Nhập câu hỏi đầu tiên của bạn...", height=120)
+            create_clicked = st.form_submit_button("ạo session và gửi", use_container_width=True, type="primary")
 
         if create_clicked:
             if not _safe_str(initial_prompt):
-                st.warning("Vui long nhap prompt khoi tao.")
+                st.warning("Vui lòng nhập prompt khởi tạo để bắt đầu cuộc trò chuyện.")
             else:
                 try:
                     new_session_id = _create_student_chat_session(user_id, selected_mode)
@@ -476,7 +476,7 @@ def render_unified_student_chat_page():
 # 2. THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR)
 # ==========================================
 with st.sidebar:
-    st.title("🛡️ GC-Proctor")
+    st.title("GC-Proctor")
 
     if st.session_state.role:
         role_label = "Sinh viên" if st.session_state.role == "student" else "Admin"
@@ -488,7 +488,7 @@ with st.sidebar:
     
     # Menu cho Sinh viên
     if st.session_state.role == "student":
-        st.caption("👨‍🎓 DASHBOARD")
+        st.caption("DASHBOARD STUDENT")
         if st.button("✨ Cuộc trò chuyện mới", width="stretch"):
             st.session_state.student_chat_force_new = True
             st.session_state.student_chat_active_session_id = None
