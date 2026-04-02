@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import uuid4
 
 import streamlit as st
 import time
@@ -13,6 +14,10 @@ from services.exam_schedule_service import ExamScheduleService
 from services.study_service import StudyService
 from services.help_request_service import HelpRequestService
 from services.user_service import UserService
+from services.chat_session_service import ChatSessionService
+from services.chat_message_service import ChatMessageService
+from models.chat_session_model import ChatSessionModel
+from models.chat_message_model import ChatMessageModel
 from utils.study_content_utils import generate_flashcards_markdown, generate_mindmap_markdown
 import os
 import warnings
@@ -44,6 +49,8 @@ def get_services():
         "study_svc": StudyService(),
         "help_request_service": HelpRequestService(),
         "user_svc": UserService(),
+        "chat_session_svc": ChatSessionService(),
+        "chat_message_svc": ChatMessageService(),
     }
 
 services = get_services()
@@ -55,6 +62,8 @@ exam_schedule_svc = services["exam_schedule_svc"]
 study_svc = services["study_svc"]
 help_request_service = services["help_request_service"]
 user_svc = services["user_svc"]
+chat_session_svc = services["chat_session_svc"]
+chat_message_svc = services["chat_message_svc"]
 
 # Khởi tạo các biến trạng thái (Session State) để lưu lịch sử và điều hướng
 if "page" not in st.session_state:
@@ -87,6 +96,13 @@ if "user_id" not in st.session_state:
     st.session_state.user_id = None
 if "full_name" not in st.session_state:
     st.session_state.full_name = None
+
+if "student_chat_active_session_id" not in st.session_state:
+    st.session_state.student_chat_active_session_id = None
+if "student_chat_force_new" not in st.session_state:
+    st.session_state.student_chat_force_new = False
+if "admin_dashboard_view" not in st.session_state:
+    st.session_state.admin_dashboard_view = "home"
 
 
 # Khởi tạo state cho yêu cầu hỗ trợ
@@ -193,46 +209,345 @@ def _get_open_help_request_count() -> int:
     except Exception:
         return 0
 
+
+STUDENT_CHAT_CHANNEL = "student_chat"
+STUDENT_CHAT_MODES = {
+    "regulation": {
+        "label": "Tra cuu quy che",
+        "icon": "📘",
+        "welcome": "Xin chao! Toi la tro ly Quy che. Ban muon hoi dieu khoan nao?",
+        "spinner": "Dang tra cuu quy che...",
+    },
+    "exam": {
+        "label": "Lich thi",
+        "icon": "🗓️",
+        "welcome": "Xin chao! Toi la tro ly Lich thi. Ban can kiem tra lich thi nao?",
+        "spinner": "Dang tra cuu lich thi...",
+    },
+    "study": {
+        "label": "On tap",
+        "icon": "📚",
+        "welcome": "Xin chao! Toi la tro ly On tap. Ban dang can on chu de gi?",
+        "spinner": "Dang tim noi dung on tap...",
+    },
+}
+
+
+def _parse_datetime(value):
+    if value is None:
+        return datetime.min
+    if isinstance(value, datetime):
+        return value
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except Exception:
+        return datetime.min
+
+
+def _format_datetime_short(value) -> str:
+    dt = _parse_datetime(value)
+    if dt == datetime.min:
+        return ""
+    return dt.strftime("%d/%m %H:%M")
+
+
+def _mode_label(mode: str) -> str:
+    mode_key = _safe_str(mode).lower()
+    return STUDENT_CHAT_MODES.get(mode_key, {}).get("label", "Unknown")
+
+
+def _mode_icon(mode: str) -> str:
+    mode_key = _safe_str(mode).lower()
+    return STUDENT_CHAT_MODES.get(mode_key, {}).get("icon", "💬")
+
+
+def _mode_welcome(mode: str) -> str:
+    mode_key = _safe_str(mode).lower()
+    return STUDENT_CHAT_MODES.get(mode_key, {}).get("welcome", "Xin chao! Ban can ho tro gi?")
+
+
+def _mode_spinner(mode: str) -> str:
+    mode_key = _safe_str(mode).lower()
+    return STUDENT_CHAT_MODES.get(mode_key, {}).get("spinner", "Dang xu ly...")
+
+
+def _create_student_chat_session(user_id: str, mode: str) -> str:
+    session_id = f"chat-{int(datetime.utcnow().timestamp() * 1000)}-{uuid4().hex[:6]}"
+    session = ChatSessionModel(
+        id=session_id,
+        userId=user_id,
+        channel=STUDENT_CHAT_CHANNEL,
+        persona=mode,
+        sessionStatus="open",
+        startedAt=datetime.utcnow().isoformat(),
+        endedAt=None,
+        isActive=True,
+    )
+    created_id = chat_session_svc.create_chat_session(session)
+    if not created_id:
+        raise RuntimeError("Khong tao duoc chat session")
+    _append_chat_message(session_id, "assistant", _mode_welcome(mode), mode)
+    return session_id
+
+
+def _append_chat_message(session_id: str, sender_type: str, content: str, mode: str, links=None) -> str:
+    message_id = f"msg-{int(datetime.utcnow().timestamp() * 1000)}-{uuid4().hex[:6]}"
+    entities = {"links": links or []}
+    message = ChatMessageModel(
+        id=message_id,
+        sessionId=session_id,
+        senderType=sender_type,
+        intent=mode,
+        content=content,
+        citations={},
+        entities=entities,
+        createdAt=datetime.utcnow().isoformat(),
+        isActive=True,
+    )
+    created_id = chat_message_svc.create_chat_message(message)
+    if not created_id:
+        raise RuntimeError("Khong luu duoc chat message")
+    return created_id
+
+
+def _load_student_sessions(user_id: str):
+    if not user_id:
+        return []
+    sessions = []
+    for session in chat_session_svc.get_all_chat_sessions():
+        if _safe_str(session.get_userId()) != _safe_str(user_id):
+            continue
+        if _safe_str(session.get_channel()) != STUDENT_CHAT_CHANNEL:
+            continue
+        if not _as_bool(session.get_state(), default=True):
+            continue
+        sessions.append(
+            {
+                "session_id": session.get_id(),
+                "mode": _safe_str(session.get_persona()).lower(),
+                "status": _safe_str(session.get_sessionStatus()).lower(),
+                "started_at": session.get_startedAt(),
+            }
+        )
+    sessions.sort(key=lambda x: _parse_datetime(x.get("started_at")), reverse=True)
+    return sessions
+
+
+def _load_session_messages(session_id: str, limit: int = 200):
+    if not session_id:
+        return []
+    messages = []
+    for msg in chat_message_svc.get_messages_by_session(session_id, limit=limit):
+        links = []
+        entities = msg.get_entities() or {}
+        if isinstance(entities, dict):
+            candidate_links = entities.get("links")
+            if isinstance(candidate_links, list):
+                links = candidate_links
+        messages.append(
+            {
+                "sender": _safe_str(msg.get_senderType()).lower(),
+                "content": _safe_str(msg.get_content()),
+                "created_at": msg.get_createdAt(),
+                "links": links,
+            }
+        )
+    messages.sort(key=lambda x: _parse_datetime(x.get("created_at")))
+    return messages
+
+
+def _get_session_mode(session_id: str, fallback_mode: str = "regulation") -> str:
+    if not session_id:
+        return fallback_mode
+    session = chat_session_svc.get_chat_session(session_id)
+    if not session:
+        return fallback_mode
+    mode = _safe_str(session.get_persona()).lower()
+    return mode if mode in STUDENT_CHAT_MODES else fallback_mode
+
+
+def _generate_unified_chat_answer(mode: str, prompt: str, student_id: str):
+    mode_key = _safe_str(mode).lower()
+    if mode_key == "regulation":
+        answer = reg_service.answer_regulation_question(prompt)
+        links = []
+        regulations = reg_service.get_all_regulations()
+        if regulations:
+            top_reg = regulations[0]
+            links = [{"title": top_reg.get_title(), "url": top_reg.get_sourceUrl()}]
+        return answer, links
+
+    if mode_key == "exam":
+        if not _safe_str(student_id):
+            return "Khong tim thay ma sinh vien trong phien dang nhap. Vui long dang nhap lai.", []
+        answer = exam_service.answer_exam_question(student_id, prompt)
+        return answer, []
+
+    chunks = kb_service.retrieve_relevant_chunks(prompt, "ALL")
+    if not chunks:
+        return "Chua tim thay noi dung phu hop trong kho tai lieu on tap hien co.", []
+    context = "\n\n".join([c.get("content", "") for c in chunks])
+    sys_prompt = (
+        "Ban la tro ly on tap cho sinh vien. "
+        "Chi duoc phep tra loi dua tren tai lieu duoc cung cap. "
+        "Neu tai lieu khong du de tra loi, hay noi ro dieu do.\n\n"
+        f"TAI LIEU:\n{context}\n\n"
+        f"CAU HOI: {prompt}"
+    )
+    response = study_svc.model.generate_content(sys_prompt)
+    return response.text, []
+
+
+def render_unified_student_chat_page():
+    st.header("GC Proctor")
+    st.caption("Mot session chi gan voi mot the loai chat. Muon doi the loai, hay tao session moi.")
+
+    user_id = _safe_str(st.session_state.get("user_id"))
+    student_id = _safe_str(st.session_state.get("student_id"))
+    if not user_id:
+        st.error("Khong tim thay userId trong phien dang nhap. Vui long dang nhap lai.")
+        return
+
+    sessions = _load_student_sessions(user_id)
+    active_session_id = _safe_str(st.session_state.get("student_chat_active_session_id"))
+    force_new = bool(st.session_state.get("student_chat_force_new"))
+
+    if active_session_id and not any(s["session_id"] == active_session_id for s in sessions):
+        active_session_id = ""
+        st.session_state.student_chat_active_session_id = None
+
+    if not active_session_id and sessions and not force_new:
+        active_session_id = sessions[0]["session_id"]
+        st.session_state.student_chat_active_session_id = active_session_id
+
+    if force_new or not active_session_id:
+        st.info("Bat dau bang cach nhap cau hoi dau tien va chon the loai chat session.")
+        with st.form("new_unified_chat_session_form", clear_on_submit=False):
+            selected_mode = st.selectbox(
+                "The loai",
+                options=list(STUDENT_CHAT_MODES.keys()),
+                format_func=lambda key: f"{_mode_icon(key)} {_mode_label(key)}",
+            )
+            initial_prompt = st.text_area("Prompt khoi tao", placeholder="Nhap cau hoi dau tien cua ban...", height=120)
+            create_clicked = st.form_submit_button("Tao session va gui", use_container_width=True, type="primary")
+
+        if create_clicked:
+            if not _safe_str(initial_prompt):
+                st.warning("Vui long nhap prompt khoi tao.")
+            else:
+                try:
+                    new_session_id = _create_student_chat_session(user_id, selected_mode)
+                    _append_chat_message(new_session_id, "user", initial_prompt, selected_mode)
+                    with st.spinner(_mode_spinner(selected_mode)):
+                        answer, links = _generate_unified_chat_answer(selected_mode, initial_prompt, student_id)
+                    _append_chat_message(new_session_id, "assistant", answer, selected_mode, links=links)
+                    st.session_state.student_chat_active_session_id = new_session_id
+                    st.session_state.student_chat_force_new = False
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Khong the tao session moi: {e}")
+        return
+
+    active_mode = _get_session_mode(active_session_id)
+    st.caption(f"Session: {active_session_id} | The loai: {_mode_icon(active_mode)} {_mode_label(active_mode)}")
+
+    messages = _load_session_messages(active_session_id, limit=300)
+    for msg in messages:
+        role = "user" if msg.get("sender") == "user" else "assistant"
+        with st.chat_message(role):
+            st.markdown(msg.get("content", ""))
+            for link in msg.get("links", []):
+                title = _safe_str(link.get("title"))
+                url = _safe_str(link.get("url"))
+                if title and url:
+                    st.caption(f"🔗 [Nguon: {title}]({url})")
+
+    if prompt := st.chat_input("Hoi tiep trong session hien tai..."):
+        try:
+            _append_chat_message(active_session_id, "user", prompt, active_mode)
+            with st.spinner(_mode_spinner(active_mode)):
+                answer, links = _generate_unified_chat_answer(active_mode, prompt, student_id)
+            _append_chat_message(active_session_id, "assistant", answer, active_mode, links=links)
+            st.rerun()
+        except Exception as e:
+            st.error(f"Khong the xu ly tin nhan: {e}")
+
 # ==========================================
 # 2. THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR)
 # ==========================================
 with st.sidebar:
     st.title("🛡️ GC-Proctor")
-    st.markdown("---")
 
     if st.session_state.role:
         role_label = "Sinh viên" if st.session_state.role == "student" else "Admin"
         st.caption(f"Đang đăng nhập: {st.session_state.get('user_code', 'N/A')} ({role_label})")
-        if st.button("🚪 Đăng xuất", width="stretch"):
+        if st.button("Đăng xuất", width="stretch"):
             logout_portal_user()
             st.rerun()
-        st.markdown("---")
-    
-    if st.button("🏠 Đổi vai trò (Trang chủ)", width="stretch"):
-        logout_portal_user()
-        st.rerun()
-    
     st.markdown("---")
     
     # Menu cho Sinh viên
     if st.session_state.role == "student":
-        st.caption("👨‍🎓 MENU SINH VIÊN")
-        if st.button("📍 Dashboard Sinh viên", width="stretch"): navigate_to("student_home")
-        if st.button("💬 Hỏi đáp Quy chế", width="stretch"): navigate_to("chat_quyche")
-        if st.button("📅 Lịch thi của tôi", width="stretch"): navigate_to("chat_lichthi")
-        if st.button("📚 Ôn tập kiến thức", width="stretch"): navigate_to("chat_ontap")
-        if st.button("🆘 Yêu cầu hỗ trợ", use_container_width=True): navigate_to("chat_bot_guidance")
+        st.caption("👨‍🎓 DASHBOARD")
+        if st.button("✨ Cuộc trò chuyện mới", width="stretch"):
+            st.session_state.student_chat_force_new = True
+            st.session_state.student_chat_active_session_id = None
+            navigate_to("chat_hub")
+            st.rerun()
+        if st.button("💬 Đoạn chat hiện tại", width="stretch"):
+            st.session_state.student_chat_force_new = False
+            navigate_to("chat_hub")
+            st.rerun()
+        if st.button("🆘 Yêu cầu hỗ trợ", use_container_width=True):
+            navigate_to("chat_bot_guidance")
+            st.rerun()
+        if st.button("🔄 Làm mới danh sách", use_container_width=True, key="student_support_refresh_sidebar"):
+            navigate_to("chat_bot_guidance")
+            st.rerun()
+            
+        st.markdown("---")
+        st.caption("Lịch sử")
+        current_user_id = _safe_str(st.session_state.get("user_id"))
+        student_sessions = _load_student_sessions(current_user_id)
+        if not student_sessions:
+            st.caption("Chưa có session nào")
+        else:
+            for sess in student_sessions[:25]:
+                sid = sess.get("session_id")
+                mode = sess.get("mode")
+                started = _format_datetime_short(sess.get("started_at"))
+                label = f"{_mode_icon(mode)} {_mode_label(mode)}"
+                if started:
+                    label = f"{label} • {started}"
+                if st.button(label, key=f"student_session_btn_{sid}", use_container_width=True):
+                    st.session_state.student_chat_active_session_id = sid
+                    st.session_state.student_chat_force_new = False
+                    navigate_to("chat_hub")
+                    st.rerun()
         
     # Menu cho Admin
     elif st.session_state.role == "admin":
-        st.caption("👨‍💻 MENU ADMIN")
+        st.caption("DASHBOARD ADMIN")
         open_help_count = _get_open_help_request_count()
         if open_help_count > st.session_state.get("admin_help_last_count", 0):
             st.toast(f"🔔 Có {open_help_count} yêu cầu hỗ trợ đang mở")
         st.session_state.admin_help_last_count = open_help_count
 
-        admin_btn_label = f"⚙️ Quản lý Hệ thống ({open_help_count} hỗ trợ mở)"
-        if st.button(admin_btn_label, use_container_width=True):
+        if st.button("📊 Trang quản lý", use_container_width=True):
+            st.session_state.admin_dashboard_view = "home"
+            navigate_to("admin_home")
+
+        if st.button("📚 Upload Quy chế", use_container_width=True):
+            st.session_state.admin_dashboard_view = "regulation"
+            navigate_to("admin_home")
+
+        if st.button("📅 Quản lý Lịch thi", use_container_width=True):
+            st.session_state.admin_dashboard_view = "exam"
+            navigate_to("admin_home")
+
+        support_btn_label = f"🆘 Hỗ trợ User ({open_help_count})"
+        if st.button(support_btn_label, use_container_width=True):
+            st.session_state.admin_dashboard_view = "support"
             navigate_to("admin_home")
 
 # ----------------------------------------
@@ -330,15 +645,15 @@ def render_chat_ui(chat_history_key, title, subtitle, is_rag=False, is_exam_look
 # ==========================================
 
 if st.session_state.page == "home":
-    st.markdown("<h1 style='text-align: center;'>Chào mừng đến với hệ thống GC-Proctor</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center;'>Đăng nhập bằng mã số, mật khẩu và chọn đúng role.</p><br>", unsafe_allow_html=True)
+    # st.markdown("<h1 style='text-align: center;'>GC-Proctor</h1>", unsafe_allow_html=True)
+    # st.markdown("<p style='text-align: center;'>Đăng nhập bằng mã số, mật khẩu và chọn đúng role.</p><br>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
-        st.info("### 🔐 Đăng nhập hệ thống\nSinh viên sẽ vào trang chủ sinh viên, Admin sẽ vào trang chủ quản trị.")
+        st.info("### ĐĂNG NHẬP\n Đăng nhập bằng mã số, mật khẩu và chọn đúng role")
         with st.form("portal_login_form", clear_on_submit=False):
-            login_user_code = st.text_input("Mã số", placeholder="VD: 3122410001 hoặc AD001")
+            login_user_code = st.text_input("Mã số", placeholder="VD: 312241000 hoặc 3121410005")
             login_password = st.text_input("Mật khẩu", type="password", placeholder="Nhập gì cũng được")
             st.caption("Mật khẩu chỉ là trường mô phỏng, hệ thống sẽ dùng mã số để xác định thông tin sinh viên/admin.")
             login_role = st.selectbox(
@@ -365,43 +680,22 @@ if st.session_state.page == "home":
                     # Lưu mã sinh viên cho toàn bộ các tính năng cần student_id.
                     if user_payload["role"] == "student":
                         st.session_state.student_id = user_payload["user_code"]
-                        navigate_to("student_home", "student")
+                        st.session_state.student_chat_force_new = True
+                        st.session_state.student_chat_active_session_id = None
+                        navigate_to("chat_hub", "student")
                     else:
                         st.session_state.student_id = None
                         navigate_to("admin_home", "admin")
                     st.rerun()
 
 elif st.session_state.page == "student_home":
-    st.header("👋 Xin chào Sinh viên!")
-    if st.session_state.get("student_id"):
-        st.caption(f"Mã sinh viên đang sử dụng: {st.session_state.get('student_id')}")
-    st.markdown("Hôm nay bạn muốn tôi hỗ trợ tính năng gì?")
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.info("#### 💬 Hỏi đáp Quy chế")
-        if st.button("Vào Chat Quy chế", width="stretch"):
-            navigate_to("chat_quyche")
-            st.rerun()
+    st.session_state.student_chat_force_new = True
+    st.session_state.student_chat_active_session_id = None
+    navigate_to("chat_hub", "student")
+    st.rerun()
 
-    with col2:
-        st.warning("#### 📅 Lịch thi & Trợ lý")
-        if st.button("Xem & Hỏi đáp Lịch thi", width="stretch"):
-            navigate_to("chat_lichthi")
-            st.rerun()
-
-    with col3:
-        st.success("#### 📚 Ôn tập kiến thức")
-        if st.button("Vào Ôn tập", width="stretch"):
-            navigate_to("chat_ontap")
-            st.rerun()
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.warning("#### 🆘 Yêu cầu hỗ trợ từ ChatBot/Admin")
-    if st.button("Vào Trợ lý vận hành", use_container_width=True):
-        navigate_to("chat_bot_guidance")
-        st.rerun()
+elif st.session_state.page == "chat_hub":
+    render_unified_student_chat_page()
 
 elif st.session_state.page == "chat_quyche":
     render_chat_ui("chat_quyche", "💬 Trợ lý Quy chế", "Hỏi đáp mọi thứ về Sổ tay sinh viên và Quy chế thi.", is_rag=True)
@@ -575,7 +869,7 @@ elif st.session_state.page == "chat_ontap":
                 st.session_state.chat_ontap.append({"role": "assistant", "content": ai_response})
 
 elif st.session_state.page == "chat_bot_guidance":
-    st.header("🤖 Trợ lý vận hành sinh viên")
+    st.header("Yêu cầu hỗ trợ")
     st.caption("Bot trả lời trước về cách sử dụng chức năng. Nếu chưa rõ, bấm Hỏi admin dưới câu trả lời.")
 
     user_code = _safe_str(st.session_state.get("user_code"))
@@ -587,13 +881,68 @@ elif st.session_state.page == "chat_bot_guidance":
             st.rerun()
         st.stop()
 
-    st.info(f"ℹ️ Mã đăng nhập đang dùng cho chức năng hỗ trợ: **{user_code}**")
-
-    if st.button("🔄 Làm mới", use_container_width=True, key="bot_guidance_refresh"):
-        st.rerun()
-
     active_escalation_id = _safe_str(st.session_state.get("bot_escalation_session_id"))
     bot_locked_after_handoff = bool(active_escalation_id)
+
+    st.markdown("#### Phiên hỏi Admin")
+    if user_id:
+        try:
+            bot_sessions_result = help_request_service.get_bot_escalation_sessions_by_user(
+                user_id,
+                include_closed=True,
+                limit=100,
+            )
+            bot_sessions = bot_sessions_result.get("sessions", [])
+        except Exception as e:
+            st.error(f"❌ Không thể tải phiên hỏi admin từ botchat: {str(e)}")
+            bot_sessions = []
+
+        if bot_sessions:
+            rows = []
+            for s in bot_sessions:
+                rows.append(
+                    {
+                        "Session ID": s.get("sessionId"),
+                        "Trạng thái": s.get("status"),
+                        "Tin nhắn gần nhất": s.get("lastMessage"),
+                        "Bắt đầu": s.get("startedAt"),
+                        "Kết thúc": s.get("endedAt"),
+                    }
+                )
+            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True, height=400)
+
+            selectable = {
+                f"{s.get('sessionId')} | {s.get('status')} | {s.get('startedAt')}": s.get("sessionId")
+                for s in bot_sessions
+            }
+            selected_label = st.selectbox(
+                "Chọn phiên Hỏi admin",
+                options=list(selectable.keys()),
+                key="bot_escalation_session_selector",
+            )
+            selected_session = selectable.get(selected_label)
+            is_opened = selected_session and selected_session == st.session_state.get("bot_escalation_session_id")
+
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                if is_opened:
+                    if st.button("📁 Đóng phiên đã chọn", use_container_width=True, key="bot_escalation_close_selected"):
+                        st.session_state.bot_escalation_session_id = None
+                        st.rerun()
+                else:
+                    if st.button("📂 Mở phiên đã chọn", use_container_width=True, key="bot_escalation_open_selected"):
+                        st.session_state.bot_escalation_session_id = selected_session
+                        st.rerun()
+            with c2:
+                if st.button("➕ Tạo phiên mới", use_container_width=True, key="bot_escalation_create_new_btn"):
+                    st.session_state.bot_escalation_session_id = None
+                    st.session_state.bot_escalate_target_idx = None
+                    st.rerun()
+        else:
+            st.info("Chưa có phiên chuyển tiếp nào từ botchat.")
+
+    st.markdown("---")
+    st.markdown("#### 💬 Đối thoại giữa bạn và bot")
 
     if not bot_locked_after_handoff:
         for idx, message in enumerate(st.session_state.chat_bot_guidance):
@@ -662,67 +1011,6 @@ elif st.session_state.page == "chat_bot_guidance":
     else:
         st.info("Phiên đã bàn giao cho admin. Khung hỏi bot đã tạm ẩn, bạn trao đổi trực tiếp với admin bên dưới.")
 
-    st.markdown("---")
-    st.markdown("#### 📬 Phiên Hỏi admin từ botchat")
-    if user_id:
-        try:
-            bot_sessions_result = help_request_service.get_bot_escalation_sessions_by_user(
-                user_id,
-                include_closed=True,
-                limit=100,
-            )
-            bot_sessions = bot_sessions_result.get("sessions", [])
-        except Exception as e:
-            st.error(f"❌ Không thể tải phiên hỏi admin từ botchat: {str(e)}")
-            bot_sessions = []
-
-        if bot_sessions:
-            rows = []
-            for s in bot_sessions:
-                rows.append(
-                    {
-                        "Session ID": s.get("sessionId"),
-                        "Trạng thái": s.get("status"),
-                        "Tin nhắn gần nhất": s.get("lastMessage"),
-                        "Bắt đầu": s.get("startedAt"),
-                        "Kết thúc": s.get("endedAt"),
-                    }
-                )
-            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True, height=400)
-
-            selectable = {
-                f"{s.get('sessionId')} | {s.get('status')} | {s.get('startedAt')}": s.get("sessionId")
-                for s in bot_sessions
-            }
-            selected_label = st.selectbox(
-                "Chọn phiên Hỏi admin",
-                options=list(selectable.keys()),
-                key="bot_escalation_session_selector",
-            )
-            selected_session = selectable.get(selected_label)
-            is_opened = selected_session and selected_session == st.session_state.get("bot_escalation_session_id")
-
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                if is_opened:
-                    if st.button("📁 Đóng phiên đã chọn", use_container_width=True, key="bot_escalation_close_selected"):
-                        st.session_state.bot_escalation_session_id = None
-                        st.rerun()
-                else:
-                    if st.button("📂 Mở phiên đã chọn", use_container_width=True, key="bot_escalation_open_selected"):
-                        st.session_state.bot_escalation_session_id = selected_session
-                        st.rerun()
-            with c2:
-                if st.button("➕ Tạo phiên mới", use_container_width=True, key="bot_escalation_create_new_btn"):
-                    st.session_state.bot_escalation_session_id = None
-                    st.session_state.bot_escalate_target_idx = None
-                    st.rerun()
-            with c3:
-                if st.button("🔄 Làm mới danh sách", use_container_width=True, key="bot_escalation_refresh_list"):
-                    st.rerun()
-        else:
-            st.info("Chưa có phiên chuyển tiếp nào từ botchat.")
-
     bot_session_id = st.session_state.get("bot_escalation_session_id")
     if bot_session_id:
         try:
@@ -783,15 +1071,33 @@ elif st.session_state.page == "chat_bot_guidance":
 # TRANG ADMIN: QUẢN LÝ DỮ LIỆU
 # ----------------------------------------
 elif st.session_state.page == "admin_home":
-    st.header("⚙️ Quản trị Hệ thống GC-Proctor")
+    st.header("Quản trị Hệ thống GC-Proctor")
 
-    tab1, tab2, tab3 = st.tabs([
-        "📚 Upload Quy chế", 
-        "📅 Quản lý Lịch thi",
-        "🆘 Hỗ trợ User",
-    ])
+    admin_view = _safe_str(st.session_state.get("admin_dashboard_view")).lower()
+    if admin_view not in {"home", "regulation", "exam", "support"}:
+        admin_view = "home"
 
-    with tab1:
+    if admin_view == "home":
+        st.caption("Chọn chức năng quản lý ở menu bên trái hoặc dùng các nút tắt bên dưới.")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.info("📚 Upload Quy chế")
+            if st.button("Mở Upload Quy chế", use_container_width=True, key="admin_home_go_regulation"):
+                st.session_state.admin_dashboard_view = "regulation"
+                st.rerun()
+        with c2:
+            st.info("📅 Quản lý Lịch thi")
+            if st.button("Mở Quản lý Lịch thi", use_container_width=True, key="admin_home_go_exam"):
+                st.session_state.admin_dashboard_view = "exam"
+                st.rerun()
+        with c3:
+            open_help_count = _get_open_help_request_count()
+            st.info(f"🆘 Hỗ trợ User ({open_help_count} mở)")
+            if st.button("Mở Hỗ trợ User", use_container_width=True, key="admin_home_go_support"):
+                st.session_state.admin_dashboard_view = "support"
+                st.rerun()
+
+    elif admin_view == "regulation":
         st.subheader("Upload Tài liệu Quy chế")
 
         uploaded_doc = st.file_uploader("Chọn file PDF hoặc DOCX", type=["pdf", "docx"])
@@ -820,16 +1126,17 @@ elif st.session_state.page == "admin_home":
                 st.warning("Vui lòng điền đầy đủ: File, Tên tài liệu và Mã môn học.")
 
 
-    # ==== TAB 5: CHUYỂN TIẾP TỪ BOTCHAT ====
-    with tab3:
-        st.subheader("🤖 Danh sách phiên Hỏi admin từ botchat")
+    elif admin_view == "exam":
+        st.subheader("📅 Quản lý Lịch thi")
+        st.info("Mục này đang sẵn sàng để mở rộng dashboard lịch thi theo nhu cầu quản trị.")
+
+    # ==== HỖ TRỢ USER: CHUYỂN TIẾP TỪ BOTCHAT ====
+    elif admin_view == "support":
+        st.subheader("Danh sách yêu cầu hỗ trợ")
 
         col1, col2 = st.columns([1, 1])
         with col1:
             show_closed_bot = st.checkbox("Hiển thị cả phiên đã đóng", value=True, key="admin_bot_show_closed")
-        with col2:
-            if st.button("🔄 Tải lại danh sách", key="admin_bot_refresh", use_container_width=True):
-                st.rerun()
 
         try:
             sessions_result = help_request_service.get_bot_escalation_sessions(include_closed=show_closed_bot)
