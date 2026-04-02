@@ -136,6 +136,7 @@
       inset: 0;
       width: 100%;
       height: 100%;
+      overflow: visible;
       pointer-events: none;
       z-index: 1;
     }
@@ -198,6 +199,33 @@
       opacity: 0.85;
     }
 
+    .node .toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      margin-left: 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      background: rgba(17, 24, 39, 0.32);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .node .toggle:hover {
+      background: rgba(17, 24, 39, 0.52);
+    }
+
+    .node .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
     @keyframes popIn {
       from {
         transform: scale(0.94);
@@ -231,9 +259,10 @@
 
   <div class="hint">
     Kéo nền để di chuyển toàn bộ sơ đồ. Lăn chuột để zoom. Kéo thả node để sắp xếp.
-    Dữ liệu tự lưu trong trình duyệt bằng localStorage.
+    Dữ liệu tự lưu trong trình duyệt bằng localStorage. Ký hiệu ▸ là còn nhánh con đang ẩn, ▾ là đang mở nhánh con.
   </div>
 
+  <script src="./data.js"></script>
   <script>
     const canvas = document.getElementById("canvas");
     const viewport = document.getElementById("viewport");
@@ -249,12 +278,21 @@
     const exportBtn = document.getElementById("exportBtn");
 
     const storageKey = "mindmap-sample-data-v1";
+    const expandedStorageKey = "mindmap-sample-expanded-v1";
+    const CHILD_X_GAP = 80;
+    const CHILD_Y_GAP = 24;
+    const CHILD_SLOT_MIN_HEIGHT = 110;
+    const NODE_MIN_WIDTH = 130;
+    const NODE_MAX_WIDTH = 260;
+    const NODE_BASE_HEIGHT = 54;
+    const AVG_CHAR_WIDTH = 7.2;
 
     let nodes = [];
     let selectedNodeId = null;
     let dragState = null;
     let panState = null;
     let suppressCanvasClick = false;
+    let expandedNodeIds = new Set(["root"]);
 
     const view = {
       scale: 1,
@@ -278,21 +316,50 @@
     }
 
     function loadData() {
+      if (Array.isArray(window.externalData) && window.externalData.length) {
+        nodes = window.externalData;
+        expandedNodeIds = new Set(["root"]);
+        saveData();
+        return;
+      }
+
       const raw = localStorage.getItem(storageKey);
       if (!raw) {
         nodes = seedData();
         return;
       }
+
       try {
         const parsed = JSON.parse(raw);
         nodes = Array.isArray(parsed) && parsed.length ? parsed : seedData();
       } catch (err) {
         nodes = seedData();
       }
+
+      loadExpandedState();
+      if (!expandedNodeIds.has("root")) {
+        expandedNodeIds.add("root");
+      }
     }
 
     function saveData() {
       localStorage.setItem(storageKey, JSON.stringify(nodes));
+      localStorage.setItem(expandedStorageKey, JSON.stringify(Array.from(expandedNodeIds)));
+    }
+
+    function loadExpandedState() {
+      const raw = localStorage.getItem(expandedStorageKey);
+      if (!raw) {
+        expandedNodeIds = new Set(["root"]);
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        expandedNodeIds = new Set(Array.isArray(parsed) ? parsed : ["root"]);
+      } catch (err) {
+        expandedNodeIds = new Set(["root"]);
+      }
     }
 
     function getNode(id) {
@@ -303,6 +370,116 @@
       if (node.parentId === null) return "root";
       const hasChildren = nodes.some((n) => n.parentId === node.id);
       return hasChildren ? "branch" : "leaf";
+    }
+
+    function getChildren(nodeId) {
+      return nodes.filter((n) => n.parentId === nodeId);
+    }
+
+    function isVisible(node) {
+      if (node.parentId === null) return true;
+
+      let current = node;
+      while (current && current.parentId !== null) {
+        const parent = getNode(current.parentId);
+        if (!parent) return false;
+        if (!expandedNodeIds.has(parent.id)) return false;
+        current = parent;
+      }
+
+      return true;
+    }
+
+    function hasChildren(nodeId) {
+      return getChildren(nodeId).length > 0;
+    }
+
+    function hasCollapsedChildren(nodeId) {
+      return hasChildren(nodeId) && !expandedNodeIds.has(nodeId);
+    }
+
+    function getVisibleNodes() {
+      return nodes.filter((node) => isVisible(node));
+    }
+
+    function updateVisibleNodePositions() {
+      const visibleNodes = getVisibleNodes();
+      visibleNodes.forEach((node) => {
+        const el = nodesLayer.querySelector(`[data-id="${node.id}"]`);
+        if (!el) return;
+        el.style.left = node.x + "px";
+        el.style.top = node.y + "px";
+      });
+    }
+
+    function estimateNodeWidth(node) {
+      const text = String(node?.text || "");
+      const estimated = text.length * AVG_CHAR_WIDTH + 44;
+      return Math.max(NODE_MIN_WIDTH, Math.min(NODE_MAX_WIDTH, estimated));
+    }
+
+    function estimateNodeHeight(node) {
+      const width = estimateNodeWidth(node);
+      const usableWidth = Math.max(80, width - 26);
+      const approxCharsPerLine = Math.max(12, Math.floor(usableWidth / AVG_CHAR_WIDTH));
+      const text = String(node?.text || "").trim();
+      const lines = Math.max(1, Math.ceil(Math.max(1, text.length) / approxCharsPerLine));
+      return NODE_BASE_HEIGHT + (lines - 1) * 18;
+    }
+
+    function shiftDescendants(rootId, dx, dy) {
+      if (!dx && !dy) return;
+      const descendants = collectDescendants(rootId).slice(1);
+      descendants.forEach((id) => {
+        const node = getNode(id);
+        if (!node) return;
+        node.x += dx;
+        node.y += dy;
+      });
+    }
+
+    function layoutChildrenToRight(parentId) {
+      const parent = getNode(parentId);
+      if (!parent) return;
+      const children = getChildren(parentId);
+      if (!children.length) return;
+
+      const parentWidth = estimateNodeWidth(parent);
+      const parentHeight = estimateNodeHeight(parent);
+      const parentCenterY = parent.y + parentHeight / 2;
+
+      children.sort((a, b) => (a.y - b.y) || String(a.id).localeCompare(String(b.id)));
+
+      const childHeights = children.map((child) => Math.max(estimateNodeHeight(child), CHILD_SLOT_MIN_HEIGHT));
+      const totalChildrenHeight = childHeights.reduce((sum, h) => sum + h, 0);
+      const totalGapHeight = Math.max(0, children.length - 1) * CHILD_Y_GAP;
+      const startY = parentCenterY - (totalChildrenHeight + totalGapHeight) / 2;
+      const childX = parent.x + parentWidth + CHILD_X_GAP;
+
+      let currentY = startY;
+
+      children.forEach((child, index) => {
+        const childHeight = childHeights[index];
+        child.x = childX;
+        child.y = currentY;
+        currentY += childHeight + CHILD_Y_GAP;
+
+        if (hasChildren(child.id) && expandedNodeIds.has(child.id)) {
+          layoutChildrenToRight(child.id);
+        }
+      });
+    }
+
+    function toggleChildren(nodeId) {
+      if (!hasChildren(nodeId)) return;
+      if (expandedNodeIds.has(nodeId)) {
+        expandedNodeIds.delete(nodeId);
+      } else {
+        expandedNodeIds.add(nodeId);
+        layoutChildrenToRight(nodeId);
+      }
+      saveData();
+      render();
     }
 
     function setSelected(id) {
@@ -339,10 +516,11 @@
 
     function renderLinks() {
       linksSvg.innerHTML = "";
-      const rect = canvas.getBoundingClientRect();
+      const visibleNodeIds = new Set(getVisibleNodes().map((n) => n.id));
 
       nodes.forEach((node) => {
         if (!node.parentId) return;
+        if (!visibleNodeIds.has(node.id) || !visibleNodeIds.has(node.parentId)) return;
         const parent = getNode(node.parentId);
         if (!parent) return;
 
@@ -362,8 +540,6 @@
 
         linksSvg.appendChild(path);
       });
-
-      linksSvg.setAttribute("viewBox", `0 0 ${rect.width} ${rect.height}`);
     }
 
     function createNodeElement(node) {
@@ -374,10 +550,39 @@
       el.style.top = node.y + "px";
       el.dataset.id = node.id;
 
+      const childrenCount = getChildren(node.id).length;
+      const collapsedMark = hasCollapsedChildren(node.id) ? ` (${childrenCount})` : "";
+      const toggleSymbol = expandedNodeIds.has(node.id) ? "▾" : "▸";
+      const toggleHtml = childrenCount > 0
+        ? `<button class="toggle" title="${expandedNodeIds.has(node.id) ? "Thu gọn" : "Mở rộng"}">${toggleSymbol}</button>`
+        : "";
+
       el.innerHTML = `
-        <span>${node.text}</span>
+        <div class="title-row">
+          <span>${node.text}${collapsedMark}</span>
+          ${toggleHtml}
+        </div>
         <span class="meta">${type === "root" ? "gốc" : "node"}</span>
       `;
+
+      const toggleBtn = el.querySelector(".toggle");
+      if (toggleBtn) {
+        toggleBtn.addEventListener("pointerdown", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        });
+
+        toggleBtn.addEventListener("pointerup", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        });
+
+        toggleBtn.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          toggleChildren(node.id);
+        });
+      }
 
       el.addEventListener("pointerdown", (event) => {
         setSelected(node.id);
@@ -399,12 +604,16 @@
 
         const dx = event.clientX - dragState.startX;
         const dy = event.clientY - dragState.startY;
-        node.x = Math.max(8, dragState.originX + dx / view.scale);
-        node.y = Math.max(8, dragState.originY + dy / view.scale);
+        const nextX = dragState.originX + dx / view.scale;
+        const nextY = dragState.originY + dy / view.scale;
+        const deltaX = nextX - node.x;
+        const deltaY = nextY - node.y;
+        node.x = nextX;
+        node.y = nextY;
+        shiftDescendants(node.id, deltaX, deltaY);
 
+        updateVisibleNodePositions();
         renderLinks();
-        el.style.left = node.x + "px";
-        el.style.top = node.y + "px";
       });
 
       el.addEventListener("pointerup", () => {
@@ -425,7 +634,8 @@
     function renderNodes() {
       const oldNodes = nodesLayer.querySelectorAll(".node");
       oldNodes.forEach((el) => el.remove());
-      nodes.forEach((node) => nodesLayer.appendChild(createNodeElement(node)));
+      const visibleNodes = getVisibleNodes();
+      visibleNodes.forEach((node) => nodesLayer.appendChild(createNodeElement(node)));
     }
 
     function render() {
@@ -446,6 +656,8 @@
         y: parent.y + childCount * 74,
         parentId: parent.id
       });
+
+      expandedNodeIds.add(parent.id);
 
       saveData();
       render();
@@ -485,6 +697,7 @@
 
       const idsToRemove = new Set(collectDescendants(selectedNodeId));
       nodes = nodes.filter((n) => !idsToRemove.has(n.id));
+      idsToRemove.forEach((id) => expandedNodeIds.delete(id));
       selectedNodeId = "root";
 
       saveData();

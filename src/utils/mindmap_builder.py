@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
@@ -79,26 +80,70 @@ def build_mindmap_from_outline(
     return build_mindmap_from_tree(tree, config=config)
 
 
-def generate_mindmap_js(bot_response: str, output_file: str = "tmp/data.js") -> None:
-    """Convert JSON response text to a data.js file for the sample HTML page."""
+def generate_mindmap_js(bot_response: str, output_file: str = "src/tmp/data.js") -> List[Dict[str, Any]]:
+    """Convert chatbot JSON to positioned nodes and write a data.js file.
+
+    Supported input formats:
+    1) List nodes with parent relation: [{"id", "text", "parent_id"}, ...]
+    2) Dict wrapper with nodes key: {"nodes": [...]}.
+    3) Already positioned list: [{"id", "text", "x", "y", "parentId"}, ...]
+    """
     json_match = re.search(r"```json\s*(.*?)\s*```", bot_response, re.DOTALL)
     raw_json = json_match.group(1) if json_match else bot_response
 
     try:
-        nodes_input = json.loads(raw_json)
+        parsed_payload = json.loads(raw_json)
     except json.JSONDecodeError:
         print("Error: Could not parse JSON from chatbot response.")
-        return
+        return []
+
+    nodes_input: Any = parsed_payload
+    if isinstance(parsed_payload, dict):
+        if isinstance(parsed_payload.get("nodes"), list):
+            nodes_input = parsed_payload["nodes"]
+        elif isinstance(parsed_payload.get("entities"), dict) and isinstance(parsed_payload["entities"].get("nodes"), list):
+            nodes_input = parsed_payload["entities"]["nodes"]
+
+    if not isinstance(nodes_input, list):
+        print("Error: Parsed payload must be a list of nodes or an object with 'nodes'.")
+        return []
 
     root_x, root_y = 520, 280
     v_gap = 100
     h_gap = 250
 
-    processed_nodes = []
+    processed_nodes: List[Dict[str, Any]] = []
+
+    # If nodes already contain absolute coordinates, keep them as-is.
+    if nodes_input and all(isinstance(node, dict) and {"id", "text", "x", "y"}.issubset(node.keys()) for node in nodes_input):
+        for node in nodes_input:
+            parent_id = node.get("parentId")
+            processed_nodes.append(
+                {
+                    "id": str(node.get("id")),
+                    "text": str(node.get("text", "")),
+                    "x": float(node.get("x")),
+                    "y": float(node.get("y")),
+                    "parentId": None if parent_id is None else str(parent_id),
+                }
+            )
+
+        js_content = f"var externalData = {json.dumps(processed_nodes, ensure_ascii=False, indent=2)};"
+        output_dir = os.path.dirname(output_file)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+        with open(output_file, "w", encoding="utf-8") as file_handle:
+            file_handle.write(js_content)
+
+        print(f"Success! Created file: {output_file}")
+        return processed_nodes
+
     hierarchy: Dict[Optional[str], List[Dict[str, Any]]] = {}
 
     for node in nodes_input:
-        parent_id = node.get("parent_id")
+        if not isinstance(node, dict):
+            continue
+        parent_id = node.get("parent_id", node.get("parentId"))
         hierarchy.setdefault(parent_id, []).append(node)
 
     def calculate_pos(parent_id: Optional[str], start_x: float, start_y: float) -> None:
@@ -124,10 +169,17 @@ def generate_mindmap_js(bot_response: str, output_file: str = "tmp/data.js") -> 
             )
             calculate_pos(child["id"], curr_x, curr_y)
 
-    root = next((node for node in nodes_input if node.get("parent_id") is None), None)
+    root = next(
+        (
+            node
+            for node in nodes_input
+            if isinstance(node, dict) and node.get("parent_id", node.get("parentId")) is None
+        ),
+        None,
+    )
     if not root:
         print("Error: Could not find root node (parent_id: null)")
-        return
+        return []
 
     processed_nodes.append(
         {
@@ -142,10 +194,14 @@ def generate_mindmap_js(bot_response: str, output_file: str = "tmp/data.js") -> 
     calculate_pos(root["id"], root_x, root_y)
 
     js_content = f"var externalData = {json.dumps(processed_nodes, ensure_ascii=False, indent=2)};"
+    output_dir = os.path.dirname(output_file)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
     with open(output_file, "w", encoding="utf-8") as file_handle:
         file_handle.write(js_content)
 
     print(f"Success! Created file: {output_file}")
+    return processed_nodes
 
 
 def _normalize_tree(tree: Dict[str, Any]) -> Dict[str, Any]:

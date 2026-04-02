@@ -1,5 +1,7 @@
 from typing import List, Optional
 from datetime import datetime, timezone
+from uuid import uuid4
+from firebase_admin import firestore
 from google.cloud.firestore_v1 import DocumentSnapshot
 from models.chat_message_model import ChatMessageModel
 from .base_repository import BaseRepository, logger
@@ -146,3 +148,32 @@ class ChatMessageRepository(BaseRepository):
         except Exception as e:
             logger.error(f"Error unblocking chat message {message_id}: {e}")
             return False
+
+    def save_mindmap_to_message(self, session_id: str, bot_response: str, processed_nodes: list) -> Optional[str]:
+        try:
+            message_id = f"msg-{int(datetime.utcnow().timestamp() * 1000)}-{uuid4().hex[:6]}"
+            message_data = {
+                "id": message_id,
+                "sessionId": session_id,
+                "senderType": "assistant",
+                "intent": "provide_mindmap",
+                "content": bot_response or "Đây là sơ đồ tư duy mình đã tạo cho bạn.",
+                "entities": {
+                    "type": "mindmap",
+                    "nodes": processed_nodes or [],
+                },
+                "citations": {
+                    "renderer": "gc_mindmap",
+                    "viewer": "src/tmp/gc_mindmap.html",
+                    "dataFile": "src/tmp/data.js",
+                },
+                "createdAt": datetime.utcnow().isoformat(),
+                "isActive": True,
+            }
+
+            self.db.collection(self.collection_name).document(message_id).set(message_data)
+            logger.info(f"Mindmap message {message_id} saved successfully.")
+            return message_id
+        except Exception as e:
+            logger.error(f"Error saving mindmap message for session {session_id}: {e}")
+            return None

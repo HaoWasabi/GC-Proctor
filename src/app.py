@@ -1,6 +1,10 @@
 from datetime import datetime
 from uuid import uuid4
+import json
+from pathlib import Path
+
 import streamlit as st
+import streamlit.components.v1 as components
 import time
 import pandas as pd
 import base64
@@ -17,7 +21,8 @@ from services.chat_session_service import ChatSessionService
 from services.chat_message_service import ChatMessageService
 from models.chat_session_model import ChatSessionModel
 from models.chat_message_model import ChatMessageModel
-from utils.study_content_utils import generate_flashcards_markdown, generate_mindmap_markdown
+from utils.study_content_utils import generate_flashcards_markdown, generate_mindmap_payload
+from utils.mindmap_builder import generate_mindmap_js
 import os
 import warnings
 
@@ -65,8 +70,6 @@ chat_session_svc = services["chat_session_svc"]
 chat_message_svc = services["chat_message_svc"]
 
 # Khởi tạo các biến trạng thái (Session State) để lưu lịch sử và điều hướng
-if "workspace_content" not in st.session_state:
-    st.session_state.workspace_content = None
 if "page" not in st.session_state:
     st.session_state.page = "home" 
 if "role" not in st.session_state:
@@ -121,6 +124,8 @@ if "admin_bot_session_id" not in st.session_state:
     st.session_state.admin_bot_session_id = None
 if "bot_escalate_target_idx" not in st.session_state:
     st.session_state.bot_escalate_target_idx = None
+if "inline_mindmap_payload" not in st.session_state:
+    st.session_state.inline_mindmap_payload = None
 
 # Hàm điều hướng trang
 def navigate_to(page_name, role=None):
@@ -272,6 +277,79 @@ def _mode_spinner(mode: str) -> str:
     return STUDENT_CHAT_MODES.get(mode_key, {}).get("spinner", "Dang xu ly...")
 
 
+def _resolve_workspace_path(path_str: str) -> Path:
+    normalized = _safe_str(path_str).replace("\\", "/")
+    base_dir = Path(__file__).resolve().parent
+    candidates = [
+        Path(normalized),
+        base_dir / normalized,
+    ]
+
+    if normalized.startswith("src/"):
+        trimmed = normalized[len("src/"):]
+        candidates.extend([Path(trimmed), base_dir / trimmed])
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+
+    return candidates[0]
+
+
+def _render_mindmap_inline(nodes: list, viewer_file: str) -> None:
+    viewer_path = _resolve_workspace_path(viewer_file or "src/tmp/gc_mindmap.html")
+    if not viewer_path.exists():
+        st.error(f"❌ Không tìm thấy file viewer mindmap: {viewer_path}")
+        return
+
+    try:
+        html_text = viewer_path.read_text(encoding="utf-8")
+    except Exception as e:
+        st.error(f"❌ Không thể đọc file viewer: {e}")
+        return
+
+    inline_data_script = f"<script>window.externalData = {json.dumps(nodes or [], ensure_ascii=False)};</script>"
+    if '<script src="./data.js"></script>' in html_text:
+        html_text = html_text.replace('<script src="./data.js"></script>', inline_data_script, 1)
+    else:
+        html_text = inline_data_script + "\n" + html_text
+
+    st.markdown("### 🗺️ Sơ đồ tư duy")
+    components.html(html_text, height=760, scrolling=True)
+
+
+def _show_inline_mindmap_panel() -> None:
+    payload = st.session_state.get("inline_mindmap_payload")
+    if not isinstance(payload, dict):
+        return
+
+    nodes = payload.get("nodes", [])
+    viewer = _safe_str(payload.get("viewer")) or "src/tmp/gc_mindmap.html"
+    if not isinstance(nodes, list) or not nodes:
+        return
+
+    col_open, col_close = st.columns([5, 1])
+    with col_close:
+        if st.button("✖ Đóng", key="close_inline_mindmap", use_container_width=True):
+            st.session_state.inline_mindmap_payload = None
+            st.rerun()
+
+    _render_mindmap_inline(nodes, viewer)
+
+
+def _is_mindmap_request(prompt: str) -> bool:
+    normalized = _safe_str(prompt).lower()
+    keywords = [
+        "mindmap",
+        "mind map",
+        "sơ đồ tư duy",
+        "so do tu duy",
+        "vẽ sơ đồ",
+        "ve so do",
+    ]
+    return any(keyword in normalized for keyword in keywords)
+
+
 def _create_student_chat_session(user_id: str, mode: str) -> str:
     session_id = f"chat-{int(datetime.utcnow().timestamp() * 1000)}-{uuid4().hex[:6]}"
     session = ChatSessionModel(
@@ -291,16 +369,28 @@ def _create_student_chat_session(user_id: str, mode: str) -> str:
     return session_id
 
 
-def _append_chat_message(session_id: str, sender_type: str, content: str, mode: str, links=None) -> str:
+def _append_chat_message(
+    session_id: str,
+    sender_type: str,
+    content: str,
+    mode: str,
+    links=None,
+    intent_override: str = "",
+    entities_extra=None,
+    citations=None,
+) -> str:
     message_id = f"msg-{int(datetime.utcnow().timestamp() * 1000)}-{uuid4().hex[:6]}"
     entities = {"links": links or []}
+    if isinstance(entities_extra, dict):
+        entities.update(entities_extra)
+    resolved_citations = citations if isinstance(citations, dict) else {}
     message = ChatMessageModel(
         id=message_id,
         sessionId=session_id,
         senderType=sender_type,
-        intent=mode,
+        intent=_safe_str(intent_override) or mode,
         content=content,
-        citations={},
+        citations=resolved_citations,
         entities=entities,
         createdAt=datetime.utcnow().isoformat(),
         isActive=True,
@@ -341,16 +431,23 @@ def _load_session_messages(session_id: str, limit: int = 200):
     for msg in chat_message_svc.get_messages_by_session(session_id, limit=limit):
         links = []
         entities = msg.get_entities() or {}
+        mindmap_nodes = []
         if isinstance(entities, dict):
             candidate_links = entities.get("links")
             if isinstance(candidate_links, list):
                 links = candidate_links
+            if entities.get("type") == "mindmap" and isinstance(entities.get("nodes"), list):
+                mindmap_nodes = entities.get("nodes")
+
+        citations = msg.get_citations() or {}
         messages.append(
             {
                 "sender": _safe_str(msg.get_senderType()).lower(),
                 "content": _safe_str(msg.get_content()),
                 "created_at": msg.get_createdAt(),
                 "links": links,
+                "mindmap_nodes": mindmap_nodes,
+                "citations": citations if isinstance(citations, dict) else {},
             }
         )
     messages.sort(key=lambda x: _parse_datetime(x.get("created_at")))
@@ -376,18 +473,33 @@ def _generate_unified_chat_answer(mode: str, prompt: str, student_id: str):
         if regulations:
             top_reg = regulations[0]
             links = [{"title": top_reg.get_title(), "url": top_reg.get_sourceUrl()}]
-        return answer, links
+        return answer, links, {}, {}, mode_key
 
     if mode_key == "exam":
         if not _safe_str(student_id):
-            return "Không tìm thấy mã sinh viên trong phiên đăng nhập. Vui lòng đăng nhập lại.", []
+            return "Không tìm thấy mã sinh viên trong phiên đăng nhập. Vui lòng đăng nhập lại.", [], {}, {}, mode_key
         answer = exam_service.answer_exam_question(student_id, prompt)
-        return answer, []
+        return answer, [], {}, {}, mode_key
 
     chunks = kb_service.retrieve_relevant_chunks(prompt, "ALL")
     if not chunks:
-        return "Chưa tìm thấy nội dung phù hợp trong kho tài liệu ôn tập hiện có.", []
+        return "Chưa tìm thấy nội dung phù hợp trong kho tài liệu ôn tập hiện có.", [], {}, {}, mode_key
+
     context = "\n\n".join([c.get("content", "") for c in chunks])
+
+    if _is_mindmap_request(prompt):
+        mindmap_result = generate_mindmap_payload(study_svc, prompt, context, chunks, output_file="src/tmp/data.js")
+        nodes = mindmap_result.get("nodes", []) if isinstance(mindmap_result, dict) else []
+        if mindmap_result.get("ok") and nodes:
+            entities = {"type": "mindmap", "nodes": nodes}
+            citations = {
+                "renderer": "gc_mindmap",
+                "viewer": "src/tmp/gc_mindmap.html",
+                "dataFile": "src/tmp/data.js",
+            }
+            return mindmap_result.get("message", "Đã tạo sơ đồ tư duy."), [], entities, citations, "provide_mindmap"
+        return mindmap_result.get("message", "Không thể tạo sơ đồ tư duy."), [], {}, {}, mode_key
+
     sys_prompt = (
         "Bạn là trợ lý ôn tập cho sinh viên. "
         "Chỉ được phép trả lời dựa trên tài liệu được cung cấp. "
@@ -396,7 +508,7 @@ def _generate_unified_chat_answer(mode: str, prompt: str, student_id: str):
         f"CÂU HỎI: {prompt}"
     )
     response = study_svc.model.generate_content(sys_prompt)
-    return response.text, []
+    return response.text, [], {}, {}, mode_key
 
 
 def render_unified_student_chat_page():
@@ -440,8 +552,17 @@ def render_unified_student_chat_page():
                     new_session_id = _create_student_chat_session(user_id, selected_mode)
                     _append_chat_message(new_session_id, "user", initial_prompt, selected_mode)
                     with st.spinner(_mode_spinner(selected_mode)):
-                        answer, links = _generate_unified_chat_answer(selected_mode, initial_prompt, student_id)
-                    _append_chat_message(new_session_id, "assistant", answer, selected_mode, links=links)
+                        answer, links, entities, citations, intent_value = _generate_unified_chat_answer(selected_mode, initial_prompt, student_id)
+                    _append_chat_message(
+                        new_session_id,
+                        "assistant",
+                        answer,
+                        selected_mode,
+                        links=links,
+                        intent_override=intent_value,
+                        entities_extra=entities,
+                        citations=citations,
+                    )
                     st.session_state.student_chat_active_session_id = new_session_id
                     st.session_state.student_chat_force_new = False
                     st.rerun()
@@ -453,7 +574,7 @@ def render_unified_student_chat_page():
     st.caption(f"Session: {active_session_id} | The loai: {_mode_icon(active_mode)} {_mode_label(active_mode)}")
 
     messages = _load_session_messages(active_session_id, limit=300)
-    for msg in messages:
+    for idx, msg in enumerate(messages):
         role = "user" if msg.get("sender") == "user" else "assistant"
         with st.chat_message(role):
             st.markdown(msg.get("content", ""))
@@ -463,12 +584,43 @@ def render_unified_student_chat_page():
                 if title and url:
                     st.caption(f"🔗 [Nguon: {title}]({url})")
 
+            mindmap_nodes = msg.get("mindmap_nodes", [])
+            if isinstance(mindmap_nodes, list) and mindmap_nodes:
+                citations = msg.get("citations", {}) if isinstance(msg.get("citations"), dict) else {}
+                viewer_file = _safe_str(citations.get("viewer")) or "src/tmp/gc_mindmap.html"
+                data_file = _safe_str(citations.get("dataFile")) or "src/tmp/data.js"
+                if st.button("🗺️ Xem sơ đồ", key=f"view_mindmap_{active_session_id}_{idx}"):
+                    try:
+                        generate_mindmap_js(
+                            json.dumps({"nodes": mindmap_nodes}, ensure_ascii=False),
+                            output_file=data_file,
+                        )
+                        st.session_state.inline_mindmap_payload = {
+                            "nodes": mindmap_nodes,
+                            "viewer": viewer_file,
+                        }
+                        st.success(f"✅ Đã cập nhật dữ liệu sơ đồ tại {data_file}.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Không thể render sơ đồ: {e}")
+
+    _show_inline_mindmap_panel()
+
     if prompt := st.chat_input("Hoi tiep trong session hien tai..."):
         try:
             _append_chat_message(active_session_id, "user", prompt, active_mode)
             with st.spinner(_mode_spinner(active_mode)):
-                answer, links = _generate_unified_chat_answer(active_mode, prompt, student_id)
-            _append_chat_message(active_session_id, "assistant", answer, active_mode, links=links)
+                answer, links, entities, citations, intent_value = _generate_unified_chat_answer(active_mode, prompt, student_id)
+            _append_chat_message(
+                active_session_id,
+                "assistant",
+                answer,
+                active_mode,
+                links=links,
+                intent_override=intent_value,
+                entities_extra=entities,
+                citations=citations,
+            )
             st.rerun()
         except Exception as e:
             st.error(f"Khong the xu ly tin nhan: {e}")
@@ -482,7 +634,7 @@ with st.sidebar:
     if st.session_state.role:
         role_label = "Sinh viên" if st.session_state.role == "student" else "Admin"
         st.caption(f"Đang đăng nhập: {st.session_state.get('user_code', 'N/A')} ({role_label})")
-        if st.button("Đăng xuất", use_container_width=True):
+        if st.button("Đăng xuất", width="stretch"):
             logout_portal_user()
             st.rerun()
     st.markdown("---")
@@ -490,12 +642,12 @@ with st.sidebar:
     # Menu cho Sinh viên
     if st.session_state.role == "student":
         st.caption("DASHBOARD STUDENT")
-        if st.button("✨ Cuộc trò chuyện mới", use_container_width=True):
+        if st.button("✨ Cuộc trò chuyện mới", width="stretch"):
             st.session_state.student_chat_force_new = True
             st.session_state.student_chat_active_session_id = None
             navigate_to("chat_hub")
             st.rerun()
-        if st.button("💬 Đoạn chat hiện tại", use_container_width=True):
+        if st.button("💬 Đoạn chat hiện tại", width="stretch"):
             st.session_state.student_chat_force_new = False
             navigate_to("chat_hub")
             st.rerun()
@@ -786,9 +938,28 @@ elif st.session_state.page == "chat_ontap":
     # Khung hiển thị chat
     chat_container = st.container(height=500, border=True)
     with chat_container:
-        for message in st.session_state.chat_ontap:
+        for idx, message in enumerate(st.session_state.chat_ontap):
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
+                entities = message.get("entities", {}) if isinstance(message, dict) else {}
+                if isinstance(entities, dict) and entities.get("type") == "mindmap" and isinstance(entities.get("nodes"), list):
+                    if st.button("🗺️ Xem sơ đồ", key=f"legacy_mindmap_btn_{idx}"):
+                        try:
+                            mindmap_nodes = entities.get("nodes", [])
+                            generate_mindmap_js(
+                                json.dumps({"nodes": mindmap_nodes}, ensure_ascii=False),
+                                output_file="src/tmp/data.js",
+                            )
+                            st.session_state.inline_mindmap_payload = {
+                                "nodes": mindmap_nodes,
+                                "viewer": "src/tmp/gc_mindmap.html",
+                            }
+                            st.success("✅ Đã cập nhật dữ liệu tại src/tmp/data.js.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Không thể render sơ đồ: {e}")
+
+    _show_inline_mindmap_panel()
 
     # Ô nhập liệu duy nhất
     if prompt := st.chat_input("Hỏi kiến thức (VD: AI là gì? OOP là gì?)..."):
@@ -799,6 +970,7 @@ elif st.session_state.page == "chat_ontap":
 
             with st.chat_message("assistant"):
                 message_placeholder = st.empty()
+                assistant_entities = {}
                 with st.spinner("Đang lục tìm trong toàn bộ hệ thống..."):
                     
                     # 1. Tìm trong TẤT CẢ tài liệu (Bỏ giới hạn mã môn, dùng "ALL")
@@ -851,7 +1023,13 @@ elif st.session_state.page == "chat_ontap":
                         # --- NHÁNH 3: VẼ SƠ ĐỒ ---
                         elif "ACTION_MINDMAP" in llm_response:
                             message_placeholder.markdown("🌳 *Đang cầm cọ vẽ sơ đồ tư duy, đợi xíu nha...*")
-                            ai_response = generate_mindmap_markdown(study_svc, prompt, context, chunks)
+                            mindmap_result = generate_mindmap_payload(study_svc, prompt, context, chunks, output_file="src/tmp/data.js")
+                            ai_response = mindmap_result.get("message", "⚠️ Không thể tạo sơ đồ tư duy.")
+                            if mindmap_result.get("ok"):
+                                assistant_entities = {
+                                    "type": "mindmap",
+                                    "nodes": mindmap_result.get("nodes", []),
+                                }
                         
                         # --- NHÁNH 4: TẠO FLASHCARD ---
                         elif "ACTION_FLASHCARD" in llm_response:
@@ -867,7 +1045,10 @@ elif st.session_state.page == "chat_ontap":
                 
                 # Render nội dung ra màn hình
                 message_placeholder.markdown(ai_response)
-                st.session_state.chat_ontap.append({"role": "assistant", "content": ai_response})
+                assistant_payload = {"role": "assistant", "content": ai_response}
+                if assistant_entities:
+                    assistant_payload["entities"] = assistant_entities
+                st.session_state.chat_ontap.append(assistant_payload)
 
 elif st.session_state.page == "chat_bot_guidance":
     st.header("Yêu cầu hỗ trợ")
