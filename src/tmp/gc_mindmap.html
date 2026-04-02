@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mind Map Drag & Drop Sample</title>
+  <style>
+    :root {
+      --bg-1: #f2f6ff;
+      --bg-2: #fff7ec;
+      --panel: #ffffffcc;
+      --text: #1f2937;
+      --line: #4b5563;
+      --node-a: #0f766e;
+      --node-b: #ea580c;
+      --node-root: #2563eb;
+      --shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at 15% 20%, var(--bg-1), transparent 35%),
+                  radial-gradient(circle at 85% 70%, var(--bg-2), transparent 30%),
+                  #f8fafc;
+      overflow: hidden;
+    }
+
+    .toolbar {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 40;
+      display: flex;
+      gap: 8px;
+      padding: 10px;
+      border-radius: 999px;
+      background: var(--panel);
+      backdrop-filter: blur(8px);
+      border: 1px solid #e5e7eb;
+      box-shadow: var(--shadow);
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+      color: white;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      opacity: 0.92;
+    }
+
+    .btn-primary {
+      background: var(--node-root);
+    }
+
+    .btn-secondary {
+      background: var(--node-a);
+    }
+
+    .btn-danger {
+      background: #dc2626;
+    }
+
+    .btn-neutral {
+      background: #374151;
+    }
+
+    .zoom-label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 62px;
+      border-radius: 999px;
+      padding: 10px 12px;
+      color: #111827;
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .hint {
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      z-index: 30;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #ffffffd9;
+      border: 1px solid #d1d5db;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+      max-width: 280px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    #canvas {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      isolation: isolate;
+      cursor: grab;
+      overflow: hidden;
+    }
+
+    #canvas.panning {
+      cursor: grabbing;
+    }
+
+    #viewport {
+      position: absolute;
+      inset: 0;
+      transform-origin: 0 0;
+      will-change: transform;
+    }
+
+    #links {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    #nodesLayer {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+    }
+
+    .link {
+      stroke: var(--line);
+      stroke-width: 2.2;
+      fill: none;
+      stroke-linecap: round;
+      opacity: 0.8;
+    }
+
+    .node {
+      position: absolute;
+      min-width: 130px;
+      max-width: 260px;
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      color: #fff;
+      font-weight: 600;
+      box-shadow: var(--shadow);
+      cursor: grab;
+      z-index: 3;
+      user-select: none;
+      animation: popIn 220ms ease;
+    }
+
+    .node:active {
+      cursor: grabbing;
+    }
+
+    .node-root {
+      background: linear-gradient(130deg, #3b82f6, #1d4ed8);
+    }
+
+    .node-branch {
+      background: linear-gradient(130deg, #0f766e, #0f766e);
+    }
+
+    .node-leaf {
+      background: linear-gradient(130deg, #f97316, #c2410c);
+    }
+
+    .node.selected {
+      outline: 3px solid #111827;
+      outline-offset: 2px;
+    }
+
+    .node .meta {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      opacity: 0.85;
+    }
+
+    @keyframes popIn {
+      from {
+        transform: scale(0.94);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button class="btn-primary" id="addChildBtn">Thêm nhánh con</button>
+    <button class="btn-secondary" id="editBtn">Sửa nội dung</button>
+    <button class="btn-danger" id="deleteBtn">Xóa node</button>
+    <button class="btn-neutral" id="zoomOutBtn">-</button>
+    <span class="zoom-label" id="zoomLabel">100%</span>
+    <button class="btn-neutral" id="zoomInBtn">+</button>
+    <button class="btn-neutral" id="resetViewBtn">Reset view</button>
+    <button class="btn-neutral" id="exportBtn">Tải ảnh PNG</button>
+  </div>
+
+  <div id="canvas">
+    <div id="viewport">
+      <svg id="links"></svg>
+      <div id="nodesLayer"></div>
+    </div>
+  </div>
+
+  <div class="hint">
+    Kéo nền để di chuyển toàn bộ sơ đồ. Lăn chuột để zoom. Kéo thả node để sắp xếp.
+    Dữ liệu tự lưu trong trình duyệt bằng localStorage.
+  </div>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const viewport = document.getElementById("viewport");
+    const linksSvg = document.getElementById("links");
+    const nodesLayer = document.getElementById("nodesLayer");
+    const addChildBtn = document.getElementById("addChildBtn");
+    const editBtn = document.getElementById("editBtn");
+    const deleteBtn = document.getElementById("deleteBtn");
+    const zoomOutBtn = document.getElementById("zoomOutBtn");
+    const zoomInBtn = document.getElementById("zoomInBtn");
+    const zoomLabel = document.getElementById("zoomLabel");
+    const resetViewBtn = document.getElementById("resetViewBtn");
+    const exportBtn = document.getElementById("exportBtn");
+
+    const storageKey = "mindmap-sample-data-v1";
+
+    let nodes = [];
+    let selectedNodeId = null;
+    let dragState = null;
+    let panState = null;
+    let suppressCanvasClick = false;
+
+    const view = {
+      scale: 1,
+      offsetX: 0,
+      offsetY: 0,
+      minScale: 0.35,
+      maxScale: 2.4
+    };
+
+    function uid() {
+      return "n_" + Math.random().toString(36).slice(2, 9);
+    }
+
+    function seedData() {
+      return [
+        { id: "root", text: "Chủ đề chính", x: 520, y: 280, parentId: null },
+        { id: uid(), text: "Ý tưởng 1", x: 300, y: 170, parentId: "root" },
+        { id: uid(), text: "Ý tưởng 2", x: 770, y: 200, parentId: "root" },
+        { id: uid(), text: "Chi tiết A", x: 190, y: 340, parentId: "root" }
+      ];
+    }
+
+    function loadData() {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) {
+        nodes = seedData();
+        return;
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        nodes = Array.isArray(parsed) && parsed.length ? parsed : seedData();
+      } catch (err) {
+        nodes = seedData();
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem(storageKey, JSON.stringify(nodes));
+    }
+
+    function getNode(id) {
+      return nodes.find((n) => n.id === id) || null;
+    }
+
+    function computeNodeType(node) {
+      if (node.parentId === null) return "root";
+      const hasChildren = nodes.some((n) => n.parentId === node.id);
+      return hasChildren ? "branch" : "leaf";
+    }
+
+    function setSelected(id) {
+      selectedNodeId = id;
+      render();
+    }
+
+    function applyViewportTransform() {
+      viewport.style.transform = `translate(${view.offsetX}px, ${view.offsetY}px) scale(${view.scale})`;
+      zoomLabel.textContent = `${Math.round(view.scale * 100)}%`;
+    }
+
+    function setZoom(nextScale, anchorClientX, anchorClientY) {
+      const clamped = Math.max(view.minScale, Math.min(view.maxScale, nextScale));
+      const rect = canvas.getBoundingClientRect();
+      const anchorX = anchorClientX - rect.left;
+      const anchorY = anchorClientY - rect.top;
+
+      const worldX = (anchorX - view.offsetX) / view.scale;
+      const worldY = (anchorY - view.offsetY) / view.scale;
+
+      view.scale = clamped;
+      view.offsetX = anchorX - worldX * view.scale;
+      view.offsetY = anchorY - worldY * view.scale;
+      applyViewportTransform();
+    }
+
+    function resetView() {
+      view.scale = 1;
+      view.offsetX = 0;
+      view.offsetY = 0;
+      applyViewportTransform();
+    }
+
+    function renderLinks() {
+      linksSvg.innerHTML = "";
+      const rect = canvas.getBoundingClientRect();
+
+      nodes.forEach((node) => {
+        if (!node.parentId) return;
+        const parent = getNode(node.parentId);
+        if (!parent) return;
+
+        const x1 = parent.x + 65;
+        const y1 = parent.y + 20;
+        const x2 = node.x + 65;
+        const y2 = node.y + 20;
+
+        const c1x = x1 + (x2 - x1) * 0.35;
+        const c1y = y1;
+        const c2x = x2 - (x2 - x1) * 0.35;
+        const c2y = y2;
+
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("class", "link");
+        path.setAttribute("d", `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`);
+
+        linksSvg.appendChild(path);
+      });
+
+      linksSvg.setAttribute("viewBox", `0 0 ${rect.width} ${rect.height}`);
+    }
+
+    function createNodeElement(node) {
+      const el = document.createElement("div");
+      const type = computeNodeType(node);
+      el.className = `node node-${type}` + (node.id === selectedNodeId ? " selected" : "");
+      el.style.left = node.x + "px";
+      el.style.top = node.y + "px";
+      el.dataset.id = node.id;
+
+      el.innerHTML = `
+        <span>${node.text}</span>
+        <span class="meta">${type === "root" ? "gốc" : "node"}</span>
+      `;
+
+      el.addEventListener("pointerdown", (event) => {
+        setSelected(node.id);
+
+        dragState = {
+          id: node.id,
+          pointerId: event.pointerId,
+          startX: event.clientX,
+          startY: event.clientY,
+          originX: node.x,
+          originY: node.y
+        };
+
+        el.setPointerCapture(event.pointerId);
+      });
+
+      el.addEventListener("pointermove", (event) => {
+        if (!dragState || dragState.id !== node.id) return;
+
+        const dx = event.clientX - dragState.startX;
+        const dy = event.clientY - dragState.startY;
+        node.x = Math.max(8, dragState.originX + dx / view.scale);
+        node.y = Math.max(8, dragState.originY + dy / view.scale);
+
+        renderLinks();
+        el.style.left = node.x + "px";
+        el.style.top = node.y + "px";
+      });
+
+      el.addEventListener("pointerup", () => {
+        if (dragState && dragState.id === node.id) {
+          dragState = null;
+          saveData();
+          render();
+        }
+      });
+
+      el.addEventListener("dblclick", () => {
+        editNode(node.id);
+      });
+
+      return el;
+    }
+
+    function renderNodes() {
+      const oldNodes = nodesLayer.querySelectorAll(".node");
+      oldNodes.forEach((el) => el.remove());
+      nodes.forEach((node) => nodesLayer.appendChild(createNodeElement(node)));
+    }
+
+    function render() {
+      renderNodes();
+      renderLinks();
+    }
+
+    function addChildNode() {
+      const parent = getNode(selectedNodeId || "root");
+      if (!parent) return;
+
+      const childCount = nodes.filter((n) => n.parentId === parent.id).length;
+
+      nodes.push({
+        id: uid(),
+        text: "Node mới",
+        x: parent.x + 180,
+        y: parent.y + childCount * 74,
+        parentId: parent.id
+      });
+
+      saveData();
+      render();
+    }
+
+    function editNode(id = selectedNodeId) {
+      if (!id) return;
+      const node = getNode(id);
+      if (!node) return;
+
+      const value = prompt("Nhập nội dung node:", node.text);
+      if (!value) return;
+
+      node.text = value.trim();
+      saveData();
+      render();
+    }
+
+    function collectDescendants(parentId) {
+      const collected = [];
+      const stack = [parentId];
+
+      while (stack.length) {
+        const current = stack.pop();
+        collected.push(current);
+
+        nodes
+          .filter((n) => n.parentId === current)
+          .forEach((child) => stack.push(child.id));
+      }
+
+      return collected;
+    }
+
+    function deleteNode() {
+      if (!selectedNodeId || selectedNodeId === "root") return;
+
+      const idsToRemove = new Set(collectDescendants(selectedNodeId));
+      nodes = nodes.filter((n) => !idsToRemove.has(n.id));
+      selectedNodeId = "root";
+
+      saveData();
+      render();
+    }
+
+    function exportToPng() {
+      if (!nodes.length) return;
+
+      const nodeRects = nodes.map((node) => {
+        const el = nodesLayer.querySelector(`[data-id="${node.id}"]`);
+        const width = el ? el.offsetWidth : 160;
+        const height = el ? el.offsetHeight : 52;
+        return { node, width, height };
+      });
+
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+
+      nodeRects.forEach(({ node, width, height }) => {
+        minX = Math.min(minX, node.x);
+        minY = Math.min(minY, node.y);
+        maxX = Math.max(maxX, node.x + width);
+        maxY = Math.max(maxY, node.y + height);
+      });
+
+      const pad = 56;
+      const exportWidth = Math.max(320, Math.ceil(maxX - minX + pad * 2));
+      const exportHeight = Math.max(240, Math.ceil(maxY - minY + pad * 2));
+
+      const exportCanvas = document.createElement("canvas");
+      const ctx = exportCanvas.getContext("2d");
+      if (!ctx) return;
+
+      exportCanvas.width = exportWidth;
+      exportCanvas.height = exportHeight;
+
+      const offsetX = pad - minX;
+      const offsetY = pad - minY;
+
+      const bg = ctx.createLinearGradient(0, 0, exportWidth, exportHeight);
+      bg.addColorStop(0, "#f2f6ff");
+      bg.addColorStop(1, "#fff7ec");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, exportWidth, exportHeight);
+
+      function getTypeColor(node) {
+        const type = computeNodeType(node);
+        if (type === "root") return "#2563eb";
+        if (type === "branch") return "#0f766e";
+        return "#ea580c";
+      }
+
+      function roundRect(x, y, w, h, r) {
+        const radius = Math.min(r, w / 2, h / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.arcTo(x + w, y, x + w, y + h, radius);
+        ctx.arcTo(x + w, y + h, x, y + h, radius);
+        ctx.arcTo(x, y + h, x, y, radius);
+        ctx.arcTo(x, y, x + w, y, radius);
+        ctx.closePath();
+      }
+
+      nodes.forEach((node) => {
+        if (!node.parentId) return;
+        const parent = getNode(node.parentId);
+        if (!parent) return;
+
+        const x1 = parent.x + 65 + offsetX;
+        const y1 = parent.y + 20 + offsetY;
+        const x2 = node.x + 65 + offsetX;
+        const y2 = node.y + 20 + offsetY;
+
+        const c1x = x1 + (x2 - x1) * 0.35;
+        const c2x = x2 - (x2 - x1) * 0.35;
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.bezierCurveTo(c1x, y1, c2x, y2, x2, y2);
+        ctx.strokeStyle = "#4b5563";
+        ctx.lineWidth = 2.2;
+        ctx.globalAlpha = 0.85;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      });
+
+      nodeRects.forEach(({ node, width, height }) => {
+        const x = node.x + offsetX;
+        const y = node.y + offsetY;
+
+        roundRect(x, y, width, height, 14);
+        ctx.fillStyle = getTypeColor(node);
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "600 16px Segoe UI";
+        ctx.textBaseline = "top";
+
+        const text = node.text.length > 28 ? `${node.text.slice(0, 28)}...` : node.text;
+        ctx.fillText(text, x + 12, y + 10);
+      });
+
+      const a = document.createElement("a");
+      const now = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+      a.href = exportCanvas.toDataURL("image/png");
+      a.download = `mindmap-${now}.png`;
+      a.click();
+    }
+
+    addChildBtn.addEventListener("click", addChildNode);
+    editBtn.addEventListener("click", () => editNode());
+    deleteBtn.addEventListener("click", deleteNode);
+    zoomOutBtn.addEventListener("click", () => {
+      const rect = canvas.getBoundingClientRect();
+      setZoom(view.scale * 0.9, rect.left + rect.width / 2, rect.top + rect.height / 2);
+    });
+    zoomInBtn.addEventListener("click", () => {
+      const rect = canvas.getBoundingClientRect();
+      setZoom(view.scale * 1.1, rect.left + rect.width / 2, rect.top + rect.height / 2);
+    });
+    resetViewBtn.addEventListener("click", resetView);
+    exportBtn.addEventListener("click", exportToPng);
+
+    canvas.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      const zoomFactor = event.deltaY < 0 ? 1.08 : 0.92;
+      setZoom(view.scale * zoomFactor, event.clientX, event.clientY);
+    }, { passive: false });
+
+    canvas.addEventListener("pointerdown", (event) => {
+      const targetNode = event.target.closest(".node");
+      if (targetNode) return;
+
+      panState = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        originOffsetX: view.offsetX,
+        originOffsetY: view.offsetY,
+        moved: false
+      };
+
+      canvas.classList.add("panning");
+      canvas.setPointerCapture(event.pointerId);
+    });
+
+    canvas.addEventListener("pointermove", (event) => {
+      if (!panState || panState.pointerId !== event.pointerId) return;
+
+      const dx = event.clientX - panState.startX;
+      const dy = event.clientY - panState.startY;
+      panState.moved = panState.moved || Math.abs(dx) > 2 || Math.abs(dy) > 2;
+
+      view.offsetX = panState.originOffsetX + dx;
+      view.offsetY = panState.originOffsetY + dy;
+      applyViewportTransform();
+    });
+
+    function endPan(event) {
+      if (!panState || panState.pointerId !== event.pointerId) return;
+      if (panState.moved) {
+        suppressCanvasClick = true;
+        setTimeout(() => {
+          suppressCanvasClick = false;
+        }, 0);
+      }
+      panState = null;
+      canvas.classList.remove("panning");
+    }
+
+    canvas.addEventListener("pointerup", endPan);
+    canvas.addEventListener("pointercancel", endPan);
+
+    window.addEventListener("resize", renderLinks);
+
+    canvas.addEventListener("click", (event) => {
+      if (suppressCanvasClick) return;
+      if (!event.target.closest(".node")) {
+        setSelected(null);
+      }
+    });
+
+    loadData();
+    selectedNodeId = "root";
+    applyViewportTransform();
+    render();
+  </script>
+</body>
+</html>

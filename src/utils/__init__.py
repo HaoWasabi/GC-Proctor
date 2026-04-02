@@ -1,6 +1,15 @@
 """Utility modules"""
-from utils.vector_store_service import VectorStoreService
-from utils.study_content_utils import generate_flashcards_markdown, generate_mindmap_markdown
+from .mindmap_builder import (
+	MindmapLayoutConfig,
+	build_mindmap_from_outline,
+	build_mindmap_from_tree,
+)
+from .vector_store_service import VectorStoreService
 
-__all__ = ["VectorStoreService", "generate_mindmap_markdown", "generate_flashcards_markdown"]
+__all__ = [
+	'VectorStoreService',
+	'MindmapLayoutConfig',
+	'build_mindmap_from_tree',
+	'build_mindmap_from_outline',
+]
     
