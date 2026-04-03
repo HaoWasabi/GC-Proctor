@@ -304,9 +304,17 @@ def _render_mindmap_inline(nodes: list, viewer_file: str) -> None:
     st.markdown("### 🗺️ Sơ đồ tư duy")
     components.html(html_text, height=760, scrolling=True)
 
-def _show_inline_mindmap_panel() -> None:
+def _payload_belongs_to_session(payload: dict, active_session_id: str) -> bool:
+    payload_session_id = _safe_str(payload.get("session_id")) if isinstance(payload, dict) else ""
+    current_session_id = _safe_str(active_session_id)
+    return bool(payload_session_id) and payload_session_id == current_session_id
+
+def _show_inline_mindmap_panel(active_session_id: str = "") -> None:
     payload = st.session_state.get("inline_mindmap_payload")
     if not isinstance(payload, dict):
+        return
+
+    if _safe_str(active_session_id) and not _payload_belongs_to_session(payload, active_session_id):
         return
 
     nodes = payload.get("nodes", [])
@@ -356,9 +364,12 @@ def generate_flashcard_js_file(cards: list, output_file: str = "src/tmp/flashcar
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(js_content)
 
-def _show_inline_flashcard_panel() -> None:
+def _show_inline_flashcard_panel(active_session_id: str = "") -> None:
     payload = st.session_state.get("inline_flashcard_payload")
     if not isinstance(payload, dict):
+        return
+
+    if _safe_str(active_session_id) and not _payload_belongs_to_session(payload, active_session_id):
         return
 
     viewer_file = payload.get("viewer", "src/tmp/gc_flashcard.html")
@@ -617,7 +628,30 @@ def render_unified_student_chat_page():
         return
 
     active_mode = _get_session_mode(active_session_id)
-    st.caption(f"Session: {active_session_id} | The loai: {_mode_icon(active_mode)} {_mode_label(active_mode)}")
+    col_info, col_delete = st.columns([5, 1])
+    with col_info:
+        st.caption(f"Session: {active_session_id} | The loai: {_mode_icon(active_mode)} {_mode_label(active_mode)}")
+    with col_delete:
+        if st.button("Xóa đoạn chat", key=f"delete_chat_session_{active_session_id}", use_container_width=True):
+            try:
+                deleted = chat_session_svc.delete_chat_session(active_session_id)
+                if not deleted:
+                    st.error("Không thể xóa phiên chat hiện tại.")
+                else:
+                    mindmap_payload = st.session_state.get("inline_mindmap_payload")
+                    if isinstance(mindmap_payload, dict) and _payload_belongs_to_session(mindmap_payload, active_session_id):
+                        st.session_state.inline_mindmap_payload = None
+
+                    flashcard_payload = st.session_state.get("inline_flashcard_payload")
+                    if isinstance(flashcard_payload, dict) and _payload_belongs_to_session(flashcard_payload, active_session_id):
+                        st.session_state.inline_flashcard_payload = None
+
+                    st.session_state.student_chat_active_session_id = None
+                    st.session_state.student_chat_force_new = False
+                    st.success("Đã xóa phiên chat.")
+                    st.rerun()
+            except Exception as e:
+                st.error(f"Không thể xóa phiên chat: {e}")
 
     messages = _load_session_messages(active_session_id, limit=300)
     for idx, msg in enumerate(messages):
@@ -645,6 +679,7 @@ def render_unified_student_chat_page():
                         st.session_state.inline_mindmap_payload = {
                             "nodes": mindmap_nodes,
                             "viewer": viewer_file,
+                            "session_id": active_session_id,
                         }
                         st.success(f"✅ Đã cập nhật dữ liệu sơ đồ tại {data_file}.")
                         st.rerun()
@@ -665,7 +700,8 @@ def render_unified_student_chat_page():
                         st.session_state.inline_flashcard_payload = {
                             "cards": flashcard_cards,
                             "viewer": fc_viewer_file,
-                            "dataFile": fc_data_file
+                            "dataFile": fc_data_file,
+                            "session_id": active_session_id,
                         }
                         st.success(f"✅ Đã nạp dữ liệu thẻ tại {fc_data_file}.")
                         st.rerun()
@@ -673,8 +709,8 @@ def render_unified_student_chat_page():
                         st.error(f"❌ Không thể nạp Flashcard: {e}")
 
     # PHẢI GỌI Ở NGOÀI VÒNG LẶP FOR ĐỂ VIEW ĐƯỢC HIỂN THỊ ĐÚNG CHỖ
-    _show_inline_flashcard_panel()
-    _show_inline_mindmap_panel()
+    _show_inline_flashcard_panel(active_session_id=active_session_id)
+    _show_inline_mindmap_panel(active_session_id=active_session_id)
 
     if prompt := st.chat_input("Hoi tiep trong session hien tai..."):
         try:
@@ -704,7 +740,7 @@ with st.sidebar:
     if st.session_state.role:
         role_label = "Sinh viên" if st.session_state.role == "student" else "Admin"
         st.caption(f"Đang đăng nhập: {st.session_state.get('user_code', 'N/A')} ({role_label})")
-        if st.button("Đăng xuất", width="stretch"):
+        if st.button("Đăng xuất", use_container_width=True):
             logout_portal_user()
             st.rerun()
     st.markdown("---")
@@ -712,12 +748,12 @@ with st.sidebar:
     # Menu cho Sinh viên
     if st.session_state.role == "student":
         st.caption("DASHBOARD STUDENT")
-        if st.button("✨ Cuộc trò chuyện mới", width="stretch"):
+        if st.button("✨ Cuộc trò chuyện mới", use_container_width=True):
             st.session_state.student_chat_force_new = True
             st.session_state.student_chat_active_session_id = None
             navigate_to("chat_hub")
             st.rerun()
-        if st.button("💬 Đoạn chat hiện tại", width="stretch"):
+        if st.button("💬 Đoạn chat hiện tại", use_container_width=True):
             st.session_state.student_chat_force_new = False
             navigate_to("chat_hub")
             st.rerun()
@@ -973,7 +1009,7 @@ elif st.session_state.page == "chat_ontap":
         with c2:
             course_code = st.text_input("Mã môn", placeholder="VD: PRM392", label_visibility="collapsed")
         with c3:
-            if st.button("🚀 Bắt đầu học", width="stretch"):
+            if st.button("🚀 Bắt đầu học", use_container_width=True):
                 if uploaded_doc and course_code:
                     with st.spinner("AI đang đọc và ghi nhớ tài liệu..."):
                         try:
@@ -998,7 +1034,7 @@ elif st.session_state.page == "chat_ontap":
     with col_title:
         st.markdown(f"**Phạm vi tìm kiếm:** `Tất cả tài liệu trên hệ thống`")
     with col_clear:
-        if st.button("🗑️ Xoá Chat", width="stretch"):
+        if st.button("🗑️ Xoá Chat", use_container_width=True):
             st.session_state.chat_ontap = [{"role": "assistant", "content": "Sẵn sàng! Bạn cần tìm hiểu hoặc ôn tập kiến thức gì?"}]
             st.rerun()
 
