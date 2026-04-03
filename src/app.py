@@ -3,7 +3,12 @@ from uuid import uuid4
 import re
 import json
 from pathlib import Path
-from utils.study_content_utils import generate_flashcards_markdown, generate_mindmap_payload, generate_flashcards_payload
+from utils.study_content_utils import (
+    generate_flashcards_markdown,
+    generate_mindmap_payload,
+    generate_flashcards_payload,
+    generate_quiz_payload,
+)
 import streamlit as st
 import streamlit.components.v1 as components
 import time
@@ -71,6 +76,8 @@ chat_message_svc = services["chat_message_svc"]
 # Khởi tạo các biến trạng thái (Session State) để lưu lịch sử và điều hướng
 if "inline_flashcard_payload" not in st.session_state:
     st.session_state.inline_flashcard_payload = None
+if "inline_quiz_payload" not in st.session_state:
+    st.session_state.inline_quiz_payload = None
 
 if "page" not in st.session_state:
     st.session_state.page = "home" 
@@ -353,6 +360,20 @@ def _is_flashcard_request(prompt: str) -> bool:
     ]
     return any(keyword in normalized for keyword in keywords)
 
+def _is_quiz_request(prompt: str) -> bool:
+    normalized = _safe_str(prompt).lower()
+    keywords = [
+        "quiz",
+        "trac nghiem",
+        "trắc nghiệm",
+        "mcq",
+        "cau hoi",
+        "câu hỏi",
+        "kiem tra",
+        "kiểm tra",
+    ]
+    return any(keyword in normalized for keyword in keywords)
+
 def generate_flashcard_js_file(cards: list, output_file: str = "src/tmp/flashcard_data.js") -> None:
     """Tạo file data.js cho Flashcard từ dữ liệu mảng (giống luồng Mindmap)"""
     import os
@@ -399,6 +420,73 @@ def _show_inline_flashcard_panel(active_session_id: str = "") -> None:
 
         st.markdown("### 🗂️ Thẻ Ghi Nhớ 3D")
         components.html(html_text, height=350, scrolling=False)
+
+def _show_inline_quiz_panel(active_session_id: str = "") -> None:
+    payload = st.session_state.get("inline_quiz_payload")
+    if not isinstance(payload, dict):
+        return
+
+    if _safe_str(active_session_id) and not _payload_belongs_to_session(payload, active_session_id):
+        return
+
+    questions = payload.get("questions", [])
+    if not isinstance(questions, list) or not questions:
+        return
+
+    payload_id = _safe_str(payload.get("payload_id")) or f"quiz-{abs(hash(json.dumps(questions, ensure_ascii=False)))}"
+
+    col_open, col_close = st.columns([5, 1])
+    with col_close:
+        if st.button("✖ Đóng", key="close_inline_quiz", use_container_width=True):
+            st.session_state.inline_quiz_payload = None
+            st.rerun()
+
+    st.markdown("### 📝 Quiz Ôn Tập")
+    for idx, question_item in enumerate(questions, start=1):
+        if not isinstance(question_item, dict):
+            continue
+
+        question_text = _safe_str(question_item.get("question"))
+        raw_options = question_item.get("options", [])
+        if isinstance(raw_options, dict):
+            raw_options = list(raw_options.values())
+        if not isinstance(raw_options, list):
+            raw_options = []
+        options = [_safe_str(opt) for opt in raw_options if _safe_str(opt)]
+        if not options:
+            continue
+
+        answer_raw = _safe_str(question_item.get("answer"))
+        explanation = _safe_str(question_item.get("explanation"))
+        question_key = f"quiz_select_{payload_id}_{idx}"
+
+        st.markdown(f"**Câu {idx}. {question_text or 'Câu hỏi'}**")
+        selected_option = st.radio(
+            f"Chọn đáp án cho câu {idx}",
+            options=options,
+            key=question_key,
+            label_visibility="collapsed",
+        )
+
+        if st.button("Kiểm tra", key=f"quiz_check_{payload_id}_{idx}"):
+            answer_idx = -1
+            answer_match = re.match(r"^([A-Da-d])(?:[\).:\-\s]+(.*))?$", answer_raw)
+            if answer_match:
+                answer_idx = ord(answer_match.group(1).upper()) - ord("A")
+            correct_option = options[answer_idx] if 0 <= answer_idx < len(options) else ""
+            normalized_selected = _safe_str(selected_option).lower()
+            normalized_answer = answer_raw.lower()
+            normalized_correct_option = _safe_str(correct_option).lower()
+            is_correct = normalized_selected in {normalized_answer, normalized_correct_option}
+
+            if is_correct:
+                st.success("✅ Chính xác!")
+            else:
+                reveal_answer = correct_option or answer_raw or "(chưa có đáp án)"
+                st.error(f"❌ Chưa đúng. Đáp án đúng: **{reveal_answer}**")
+
+            if explanation:
+                st.info(f"💡 Giải thích: {explanation}")
 
 def _create_student_chat_session(user_id: str, mode: str) -> str:
     session_id = f"chat-{int(datetime.utcnow().timestamp() * 1000)}-{uuid4().hex[:6]}"
@@ -480,6 +568,7 @@ def _load_session_messages(session_id: str, limit: int = 200):
         entities = msg.get_entities() or {}
         mindmap_nodes = []
         flashcard_cards = [] 
+        quiz_questions = []
         
         if isinstance(entities, dict):
             candidate_links = entities.get("links")
@@ -489,6 +578,8 @@ def _load_session_messages(session_id: str, limit: int = 200):
                 mindmap_nodes = entities.get("nodes")
             if entities.get("type") == "flashcard" and isinstance(entities.get("cards"), list):
                 flashcard_cards = entities.get("cards")
+            if entities.get("type") == "quiz" and isinstance(entities.get("questions"), list):
+                quiz_questions = entities.get("questions")
 
         citations = msg.get_citations() or {}
         messages.append(
@@ -498,7 +589,8 @@ def _load_session_messages(session_id: str, limit: int = 200):
                 "created_at": msg.get_createdAt(),
                 "links": links,
                 "mindmap_nodes": mindmap_nodes,
-                "flashcard_cards": flashcard_cards, 
+                "flashcard_cards": flashcard_cards,
+                "quiz_questions": quiz_questions,
                 "citations": citations if isinstance(citations, dict) else {},
             }
         )
@@ -557,6 +649,14 @@ def _generate_unified_chat_answer(mode: str, prompt: str, student_id: str):
             entities = {"type": "flashcard", "cards": cards}
             return flashcard_result.get("message", "Đã tạo thẻ ghi nhớ."), [], entities, {}, "provide_flashcard"
         return flashcard_result.get("message", "Không thể tạo thẻ ghi nhớ."), [], {}, {}, mode_key
+
+    if _is_quiz_request(prompt):
+        quiz_result = generate_quiz_payload(study_svc, prompt, context, chunks, num_questions=5)
+        questions = quiz_result.get("questions", []) if isinstance(quiz_result, dict) else []
+        if quiz_result.get("ok") and questions:
+            entities = {"type": "quiz", "questions": questions}
+            return quiz_result.get("message", "Đã tạo bài quiz."), [], entities, {}, "provide_quiz"
+        return quiz_result.get("message", "Không thể tạo bài quiz."), [], {}, {}, mode_key
 
     sys_prompt = (
         "Bạn là trợ lý ôn tập cho sinh viên. "
@@ -646,6 +746,10 @@ def render_unified_student_chat_page():
                     if isinstance(flashcard_payload, dict) and _payload_belongs_to_session(flashcard_payload, active_session_id):
                         st.session_state.inline_flashcard_payload = None
 
+                    quiz_payload = st.session_state.get("inline_quiz_payload")
+                    if isinstance(quiz_payload, dict) and _payload_belongs_to_session(quiz_payload, active_session_id):
+                        st.session_state.inline_quiz_payload = None
+
                     st.session_state.student_chat_active_session_id = None
                     st.session_state.student_chat_force_new = False
                     st.success("Đã xóa phiên chat.")
@@ -708,9 +812,22 @@ def render_unified_student_chat_page():
                     except Exception as e:
                         st.error(f"❌ Không thể nạp Flashcard: {e}")
 
+            # --- RENDER NÚT QUIZ ---
+            quiz_questions = msg.get("quiz_questions", [])
+            if isinstance(quiz_questions, list) and quiz_questions:
+                if st.button("📝 Làm Quiz", key=f"view_quiz_{active_session_id}_{idx}"):
+                    st.session_state.inline_quiz_payload = {
+                        "questions": quiz_questions,
+                        "session_id": active_session_id,
+                        "payload_id": f"quiz-{active_session_id}-{idx}",
+                    }
+                    st.success("✅ Đã mở bài quiz. Chọn đáp án và bấm 'Kiểm tra' cho từng câu nhé.")
+                    st.rerun()
+
     # PHẢI GỌI Ở NGOÀI VÒNG LẶP FOR ĐỂ VIEW ĐƯỢC HIỂN THỊ ĐÚNG CHỖ
     _show_inline_flashcard_panel(active_session_id=active_session_id)
     _show_inline_mindmap_panel(active_session_id=active_session_id)
+    _show_inline_quiz_panel(active_session_id=active_session_id)
 
     if prompt := st.chat_input("Hoi tiep trong session hien tai..."):
         try:
@@ -1084,8 +1201,19 @@ elif st.session_state.page == "chat_ontap":
                         except Exception as e:
                             st.error(f"Lỗi: {e}")
 
+                # --- Nút làm Quiz ---
+                if isinstance(entities, dict) and entities.get("type") == "quiz" and isinstance(entities.get("questions"), list):
+                    if st.button("📝 Làm Quiz", key=f"quiz_btn_{idx}"):
+                        st.session_state.inline_quiz_payload = {
+                            "questions": entities.get("questions", []),
+                            "payload_id": f"legacy-quiz-{idx}",
+                        }
+                        st.success("✅ Đã mở bài quiz. Chọn đáp án rồi bấm 'Kiểm tra' cho từng câu nhé.")
+                        st.rerun()
+
     _show_inline_flashcard_panel()
     _show_inline_mindmap_panel()
+    _show_inline_quiz_panel()
 
     # Ô nhập liệu duy nhất
     if prompt := st.chat_input("Hỏi kiến thức (VD: AI là gì? OOP là gì?)..."):
@@ -1109,7 +1237,7 @@ elif st.session_state.page == "chat_ontap":
                     
                     CÂU HỎI / YÊU CẦU CỦA SINH VIÊN: "{prompt}"
                     
-                    HÃY PHÂN TÍCH CÂU HỎI VÀ ĐỐI CHIẾU VỚI TÀI LIỆU, SAU ĐÓ BẮT BUỘC PHẢI LÀM THEO 1 TRONG 5 QUY TẮC DƯỚI ĐÂY:
+                    HÃY PHÂN TÍCH CÂU HỎI VÀ ĐỐI CHIẾU VỚI TÀI LIỆU, SAU ĐÓ BẮT BUỘC PHẢI LÀM THEO 1 TRONG 6 QUY TẮC DƯỚI ĐÂY:
                     
                     1. NÊU CẦU NGOÀI LỀ: Nếu ý định của họ KHÔNG liên quan gì đến học tập, ôn thi (ví dụ hỏi thời tiết, trêu đùa), CHỈ TRẢ LỜI ĐÚNG 1 CHỮ: OUT_OF_SCOPE
                     
@@ -1118,8 +1246,10 @@ elif st.session_state.page == "chat_ontap":
                     3. YÊU CẦU FLASHCARD: Nếu sinh viên muốn tạo thẻ ghi nhớ, flashcard, CHỈ TRẢ LỜI ĐÚNG 1 CHỮ: ACTION_FLASHCARD
                     
                     4. YÊU CẦU MINDMAP: Nếu sinh viên muốn vẽ sơ đồ tư duy, mindmap, CHỈ TRẢ LỜI ĐÚNG 1 CHỮ: ACTION_MINDMAP
+
+                    5. YÊU CẦU QUIZ: Nếu sinh viên muốn làm bài quiz, trắc nghiệm, câu hỏi nhiều lựa chọn, CHỈ TRẢ LỜI ĐÚNG 1 CHỮ: ACTION_QUIZ
                     
-                    5. CÓ THÔNG TIN: Nếu tài liệu THỰC SỰ CÓ CHỨA thông tin để giải đáp, hãy trả lời chi tiết, dùng nhiều emoji nhí nhảnh. TUYỆT ĐỐI không tự bịa thêm kiến thức ngoài tài liệu.
+                    6. CÓ THÔNG TIN: Nếu tài liệu THỰC SỰ CÓ CHỨA thông tin để giải đáp, hãy trả lời chi tiết, dùng nhiều emoji nhí nhảnh. TUYỆT ĐỐI không tự bịa thêm kiến thức ngoài tài liệu.
 
                     TÀI LIỆU CỦA HỆ THỐNG:
                     {context}
@@ -1175,7 +1305,21 @@ elif st.session_state.page == "chat_ontap":
                             else:
                                 ai_response = f"⚠️ Không thể tạo thẻ ghi nhớ: {flashcard_result.get('message')}"
 
-                        # --- NHÁNH 5: TRẢ LỜI BÌNH THƯỜNG ---
+                        # --- NHÁNH 5: TẠO QUIZ ---
+                        elif "ACTION_QUIZ" in llm_response:
+                            message_placeholder.markdown("📝 *Đang tạo bộ câu hỏi trắc nghiệm cho bạn...*")
+                            quiz_result = generate_quiz_payload(study_svc, prompt, context, chunks, num_questions=5)
+
+                            if quiz_result.get("ok"):
+                                assistant_entities = {
+                                    "type": "quiz",
+                                    "questions": quiz_result.get("questions", []),
+                                }
+                                ai_response = "✅ Đã tạo bài quiz rồi nè! Bạn nhấn **📝 Làm Quiz** bên dưới để bắt đầu."
+                            else:
+                                ai_response = f"⚠️ Không thể tạo quiz: {quiz_result.get('message')}"
+
+                        # --- NHÁNH 6: TRẢ LỜI BÌNH THƯỜNG ---
                         else:
                             ai_response = llm_response
 
