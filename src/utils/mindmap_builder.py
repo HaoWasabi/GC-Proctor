@@ -1,10 +1,21 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
+
+WORKSPACE_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _resolve_output_path(output_file: str) -> Path:
+    normalized = (output_file or "").replace("\\", "/")
+    target = Path(normalized)
+    if target.is_absolute():
+        return target
+    return WORKSPACE_ROOT / target
 
 
 @dataclass(frozen=True)
@@ -80,7 +91,7 @@ def build_mindmap_from_outline(
     return build_mindmap_from_tree(tree, config=config)
 
 
-def generate_mindmap_js(bot_response: str, output_file: str = "src/tmp/data.js") -> List[Dict[str, Any]]:
+def generate_mindmap_js(bot_response: str, output_file: str = "tmp/mindmap_data.js") -> List[Dict[str, Any]]:
     """Convert chatbot JSON to positioned nodes and write a data.js file.
 
     Supported input formats:
@@ -129,13 +140,12 @@ def generate_mindmap_js(bot_response: str, output_file: str = "src/tmp/data.js")
             )
 
         js_content = f"var externalData = {json.dumps(processed_nodes, ensure_ascii=False, indent=2)};"
-        output_dir = os.path.dirname(output_file)
-        if output_dir:
-            os.makedirs(output_dir, exist_ok=True)
-        with open(output_file, "w", encoding="utf-8") as file_handle:
+        output_path = _resolve_output_path(output_file)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as file_handle:
             file_handle.write(js_content)
 
-        print(f"Success! Created file: {output_file}")
+        print(f"Success! Created file: {output_path}")
         return processed_nodes
 
     hierarchy: Dict[Optional[str], List[Dict[str, Any]]] = {}
@@ -194,13 +204,12 @@ def generate_mindmap_js(bot_response: str, output_file: str = "src/tmp/data.js")
     calculate_pos(root["id"], root_x, root_y)
 
     js_content = f"var externalData = {json.dumps(processed_nodes, ensure_ascii=False, indent=2)};"
-    output_dir = os.path.dirname(output_file)
-    if output_dir:
-        os.makedirs(output_dir, exist_ok=True)
-    with open(output_file, "w", encoding="utf-8") as file_handle:
+    output_path = _resolve_output_path(output_file)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as file_handle:
         file_handle.write(js_content)
 
-    print(f"Success! Created file: {output_file}")
+    print(f"Success! Created file: {output_path}")
     return processed_nodes
 
 

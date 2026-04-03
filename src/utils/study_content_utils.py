@@ -2,9 +2,20 @@ import json
 from typing import Any, Dict
 import re
 from utils.mindmap_builder import generate_mindmap_js
-import os
+from pathlib import Path
 
-def generate_mindmap_payload(study_svc, prompt: str, context: str, chunks: list, output_file: str = "src/tmp/data.js") -> Dict[str, Any]:
+
+WORKSPACE_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _resolve_output_path(output_file: str) -> Path:
+    normalized = (output_file or "").replace("\\", "/")
+    target = Path(normalized)
+    if target.is_absolute():
+        return target
+    return WORKSPACE_ROOT / target
+
+def generate_mindmap_payload(study_svc, prompt: str, context: str, chunks: list, output_file: str = "tmp/data.js") -> Dict[str, Any]:
     """Generate mindmap nodes, persist as data.js and return payload for message entities."""
     if not chunks:
         return {
@@ -104,7 +115,7 @@ def find_related_sources_markdown(kb_service, prompt: str, course_code: str = "A
     except Exception as e:
         return f"⚠️ Lỗi khi tìm kiếm tài liệu: {e}"
 
-def generate_flashcards_payload(study_svc, prompt: str, output_file: str = "src/tmp/flashcard_data.js") -> Dict[str, Any]:
+def generate_flashcards_payload(study_svc, prompt: str, output_file: str = "tmp/flashcard_data.js") -> Dict[str, Any]:
     """Sử dụng backend sinh flashcard có sẵn và lưu ra file JS để render 3D"""
     # 1. Gọi hàm backend CÓ SẴN của bạn (không chế prompt mới)
     res = study_svc.generate_flashcards("ALL", prompt)
@@ -126,10 +137,9 @@ def generate_flashcards_payload(study_svc, prompt: str, output_file: str = "src/
 
     # 3. Ghi ra file flashcard_data.js giống hệt cách Mindmap làm
     js_content = f"var externalFlashcards = {json.dumps(cards_for_html, ensure_ascii=False, indent=2)};"
-    output_dir = os.path.dirname(output_file)
-    if output_dir:
-        os.makedirs(output_dir, exist_ok=True)
-    with open(output_file, "w", encoding="utf-8") as f:
+    output_path = _resolve_output_path(output_file)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
         f.write(js_content)
 
     return {
@@ -137,3 +147,102 @@ def generate_flashcards_payload(study_svc, prompt: str, output_file: str = "src/
         "message": "🎉 Ta-da! Mình đã soạn xong bộ Flashcard 3D. Bạn nhấn nút bên dưới để học nhé!",
         "cards": cards_for_html
     }
+
+
+def generate_quiz_payload(
+    study_svc,
+    prompt: str,
+    context: str,
+    chunks: list,
+    num_questions: int = 5,
+) -> Dict[str, Any]:
+    """Generate multiple-choice quiz questions from study context."""
+    if not chunks:
+        return {
+            "ok": False,
+            "message": "⚠️ Chưa có đủ tài liệu liên quan để tạo quiz.",
+            "questions": [],
+        }
+
+    quiz_prompt = f"""
+    Bạn là trợ lý tạo quiz ôn tập cho sinh viên.
+    Dựa trên tài liệu bên dưới, hãy tạo {num_questions} câu hỏi trắc nghiệm (MCQ).
+
+    BẮT BUỘC CHỈ TRẢ VỀ JSON HỢP LỆ, không markdown, không giải thích thêm.
+    Định dạng JSON:
+    [
+      {{
+        "question": "...",
+        "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
+        "answer": "A",
+        "explanation": "..."
+      }}
+    ]
+
+    Yêu cầu:
+    - Mỗi câu có đúng 4 lựa chọn A/B/C/D.
+    - Trường answer chỉ chứa 1 ký tự: A hoặc B hoặc C hoặc D.
+    - Nội dung phải bám sát tài liệu, không bịa thêm kiến thức ngoài tài liệu.
+
+    Chủ đề sinh viên hỏi: {prompt}
+    TÀI LIỆU:
+    {context}
+    """
+
+    try:
+        raw_text = study_svc.model.generate_content(quiz_prompt).text.strip()
+        if raw_text.startswith("```json"):
+            raw_text = raw_text[7:-3].strip()
+        elif raw_text.startswith("```"):
+            raw_text = raw_text[3:-3].strip()
+
+        parsed = json.loads(raw_text)
+        if not isinstance(parsed, list):
+            return {
+                "ok": False,
+                "message": "⚠️ Đầu ra quiz từ AI chưa đúng định dạng danh sách câu hỏi.",
+                "questions": [],
+            }
+
+        normalized_questions = []
+        for item in parsed:
+            if not isinstance(item, dict):
+                continue
+
+            raw_options = item.get("options", [])
+            if isinstance(raw_options, dict):
+                raw_options = list(raw_options.values())
+            if not isinstance(raw_options, list):
+                raw_options = []
+
+            options = [str(opt).strip() for opt in raw_options if str(opt).strip()]
+            if len(options) < 2:
+                continue
+
+            normalized_questions.append(
+                {
+                    "question": str(item.get("question", "")).strip(),
+                    "options": options[:4],
+                    "answer": str(item.get("answer", "")).strip().upper()[:1],
+                    "explanation": str(item.get("explanation", "")).strip(),
+                }
+            )
+
+        if not normalized_questions:
+            return {
+                "ok": False,
+                "message": "⚠️ Mình chưa tạo được bộ quiz hợp lệ từ tài liệu hiện có.",
+                "questions": [],
+            }
+
+        return {
+            "ok": True,
+            "message": "🎯 Mình đã tạo xong bài quiz ôn tập. Bạn bấm nút 'Làm Quiz' để bắt đầu nhé!",
+            "questions": normalized_questions,
+        }
+    except Exception as e:
+        return {
+            "ok": False,
+            "message": f"⚠️ Lỗi khi tạo quiz: {e}",
+            "questions": [],
+        }

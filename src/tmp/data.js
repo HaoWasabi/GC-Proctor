@@ -1,345 +1,408 @@
 var externalData = [
   {
     "id": "root",
-    "text": "AI Agent",
+    "text": "LangChain Mindmap",
     "x": 520.0,
     "y": 280.0,
     "parentId": null
   },
   {
-    "id": "dinh_nghia",
-    "text": "Định nghĩa",
+    "id": "n1",
+    "text": "1. LLMs & Providers",
     "x": 770.0,
-    "y": 80.0,
+    "y": 130.0,
     "parentId": "root"
   },
   {
-    "id": "d_khong_chatbot",
-    "text": "Không chỉ là chatbot",
-    "x": 1020.0,
-    "y": -320.0,
-    "parentId": "dinh_nghia"
-  },
-  {
-    "id": "d_llm_reasoning",
-    "text": "Sử dụng LLM làm cỗ máy suy luận (reasoning engine)",
-    "x": 1020.0,
-    "y": -220.0,
-    "parentId": "dinh_nghia"
-  },
-  {
-    "id": "d_chuoi_hanh_dong",
-    "text": "Xác định chuỗi hành động cần thực hiện",
-    "x": 1020.0,
-    "y": -120.0,
-    "parentId": "dinh_nghia"
-  },
-  {
-    "id": "d_khac_chains",
-    "text": "Khác Chains (luồng hard-coded)",
-    "x": 1020.0,
-    "y": -20.0,
-    "parentId": "dinh_nghia"
-  },
-  {
-    "id": "d_quyet_dinh_qua_llm",
-    "text": "LLM quyết định hành động",
-    "x": 1020.0,
-    "y": 80.0,
-    "parentId": "dinh_nghia"
-  },
-  {
-    "id": "d_thuc_hien_qua_tools",
-    "text": "Thực hiện qua Tools",
-    "x": 1020.0,
-    "y": 180.0,
-    "parentId": "dinh_nghia"
-  },
-  {
-    "id": "d_quan_sat_lap_lai",
-    "text": "Quan sát kết quả và lặp lại quy trình",
-    "x": 1020.0,
-    "y": 280.0,
-    "parentId": "dinh_nghia"
-  },
-  {
-    "id": "d_muc_tieu",
-    "text": "Đạt được mục tiêu",
-    "x": 1020.0,
-    "y": 380.0,
-    "parentId": "dinh_nghia"
-  },
-  {
-    "id": "d_react_agent_example",
-    "text": "Ví dụ: ReAct Agent (LangGraph)",
-    "x": 1020.0,
-    "y": 480.0,
-    "parentId": "dinh_nghia"
-  },
-  {
-    "id": "vai_tro_llm",
-    "text": "Vai trò của LLM trong Agent",
-    "x": 770.0,
-    "y": 180.0,
-    "parentId": "root"
-  },
-  {
-    "id": "v_cong_cu_manh_me",
-    "text": "Công cụ AI mạnh mẽ",
+    "id": "n1_1",
+    "text": "HuggingFaceEndpoint",
     "x": 1020.0,
     "y": 30.0,
-    "parentId": "vai_tro_llm"
+    "parentId": "n1"
   },
   {
-    "id": "v_dien_giai_tao_vb",
-    "text": "Diễn giải và tạo văn bản giống con người",
+    "id": "n1_2",
+    "text": "HuggingFacePipeline",
     "x": 1020.0,
     "y": 130.0,
-    "parentId": "vai_tro_llm"
+    "parentId": "n1"
   },
   {
-    "id": "v_linh_hoat",
-    "text": "Linh hoạt: viết nội dung, dịch ngôn ngữ, tóm tắt, trả lời câu hỏi",
+    "id": "n1_3",
+    "text": "ChatNVIDIA",
     "x": 1020.0,
     "y": 230.0,
-    "parentId": "vai_tro_llm"
+    "parentId": "n1"
   },
   {
-    "id": "v_dong_co_suy_luan",
-    "text": "Hoạt động như bộ máy suy luận và điều khiển tác vụ agent",
-    "x": 1020.0,
-    "y": 330.0,
-    "parentId": "vai_tro_llm"
+    "id": "n1_3_1",
+    "text": "Cách khai báo đối tượng",
+    "x": 1270.0,
+    "y": 180.0,
+    "parentId": "n1_3"
   },
   {
-    "id": "thanh_phan_chinh",
-    "text": "Thành phần & Thư viện (LangChain/LangGraph)",
-    "x": 770.0,
+    "id": "n1_3_2",
+    "text": "Ví dụ: `ChatNVIDIA(model='nvidia/nemotron-3-super-120b-a12b')`",
+    "x": 1520.0,
+    "y": 180.0,
+    "parentId": "n1_3_1"
+  },
+  {
+    "id": "n1_3_3",
+    "text": "API Key: NVIDIA",
+    "x": 1270.0,
     "y": 280.0,
+    "parentId": "n1_3"
+  },
+  {
+    "id": "n2",
+    "text": "2. Embedding Models",
+    "x": 770.0,
+    "y": 230.0,
     "parentId": "root"
   },
   {
-    "id": "tc_langchain",
-    "text": "LangChain: Khung làm việc cho Agents",
+    "id": "n2_1",
+    "text": "Định nghĩa",
+    "x": 1020.0,
+    "y": 80.0,
+    "parentId": "n2"
+  },
+  {
+    "id": "n2_1_1",
+    "text": "Chuyển văn bản thô thành vector số",
+    "x": 1270.0,
+    "y": -70.0,
+    "parentId": "n2_1"
+  },
+  {
+    "id": "n2_1_2",
+    "text": "Nắm bắt ý nghĩa ngữ nghĩa",
+    "x": 1270.0,
+    "y": 30.0,
+    "parentId": "n2_1"
+  },
+  {
+    "id": "n2_1_3",
+    "text": "Cho phép so sánh và tìm kiếm văn bản dựa trên nội dung",
+    "x": 1270.0,
+    "y": 130.0,
+    "parentId": "n2_1"
+  },
+  {
+    "id": "n2_1_4",
+    "text": "Văn bản tương đồng được đặt gần nhau trong không gian vector",
+    "x": 1270.0,
+    "y": 230.0,
+    "parentId": "n2_1"
+  },
+  {
+    "id": "n2_2",
+    "text": "Các phương thức chính",
     "x": 1020.0,
     "y": 180.0,
-    "parentId": "thanh_phan_chinh"
+    "parentId": "n2"
   },
   {
-    "id": "tc_langgraph",
-    "text": "LangGraph: Tạo ReAct Agent",
-    "x": 1020.0,
-    "y": 280.0,
-    "parentId": "thanh_phan_chinh"
-  },
-  {
-    "id": "tc_create_react_agent",
-    "text": "`create_react_agent`: Giúp AI quyết định trả lời hay gọi công cụ",
+    "id": "n2_2_1",
+    "text": "embed_documents(texts: List[str])",
     "x": 1270.0,
-    "y": 230.0,
-    "parentId": "tc_langgraph"
+    "y": 130.0,
+    "parentId": "n2_2"
   },
   {
-    "id": "tc_memorysaver",
-    "text": "`MemorySaver`: 'Trí nhớ ngắn hạn', giúp AI nhớ nội dung chat",
-    "x": 1270.0,
-    "y": 330.0,
-    "parentId": "tc_langgraph"
+    "id": "n2_2_1_1",
+    "text": "Chức năng: Vectơ hóa nhiều tài liệu nguồn",
+    "x": 1520.0,
+    "y": 80.0,
+    "parentId": "n2_2_1"
   },
   {
-    "id": "tc_tools",
-    "text": "Tools: Công cụ để Agents thực hiện hành động",
-    "x": 1020.0,
-    "y": 380.0,
-    "parentId": "thanh_phan_chinh"
-  },
-  {
-    "id": "ung_dung_tiem_nang",
-    "text": "Ứng dụng & Lĩnh vực tiềm năng",
-    "x": 770.0,
-    "y": 380.0,
-    "parentId": "root"
-  },
-  {
-    "id": "ua_du_lieu_rieng",
-    "text": "Đưa dữ liệu riêng (PDF, SQL, Notion) vào AI để trả lời chính xác",
-    "x": 1020.0,
+    "id": "n2_2_1_2",
+    "text": "Đầu ra: Danh sách các vectơ (List[float])",
+    "x": 1520.0,
     "y": 180.0,
-    "parentId": "ung_dung_tiem_nang"
+    "parentId": "n2_2_1"
   },
   {
-    "id": "ua_ca_nhan_hoa",
-    "text": "Cá nhân hóa",
-    "x": 1020.0,
-    "y": 280.0,
-    "parentId": "ung_dung_tiem_nang"
-  },
-  {
-    "id": "ua_goi_y_sp",
-    "text": "Gợi ý sản phẩm",
+    "id": "n2_2_2",
+    "text": "embed_query(text: str)",
     "x": 1270.0,
     "y": 230.0,
-    "parentId": "ua_ca_nhan_hoa"
+    "parentId": "n2_2"
   },
   {
-    "id": "ua_tro_ly_ao",
-    "text": "Trợ lý ảo thông minh tư vấn sản phẩm",
+    "id": "n2_2_2_1",
+    "text": "Chức năng: Vectơ hóa một câu truy vấn",
+    "x": 1520.0,
+    "y": 180.0,
+    "parentId": "n2_2_2"
+  },
+  {
+    "id": "n2_2_2_2",
+    "text": "Đầu ra: Vectơ đơn lẻ (List[float])",
+    "x": 1520.0,
+    "y": 280.0,
+    "parentId": "n2_2_2"
+  },
+  {
+    "id": "n2_3",
+    "text": "Lý do cần phân chia hai phương thức",
+    "x": 1020.0,
+    "y": 280.0,
+    "parentId": "n2"
+  },
+  {
+    "id": "n2_3_1",
+    "text": "Tối ưu hóa cho kiến trúc tìm kiếm không đối xứng",
+    "x": 1270.0,
+    "y": 230.0,
+    "parentId": "n2_3"
+  },
+  {
+    "id": "n2_3_2",
+    "text": "Mô hình yêu cầu xử lý khác nhau (ví dụ: thêm tiền tố)",
     "x": 1270.0,
     "y": 330.0,
-    "parentId": "ua_ca_nhan_hoa"
+    "parentId": "n2_3"
   },
   {
-    "id": "ua_phan_tich_quyet_dinh",
-    "text": "Phân tích & quyết định",
+    "id": "n2_4",
+    "text": "Thực hiện Embedding trong Hugging Face",
     "x": 1020.0,
     "y": 380.0,
-    "parentId": "ung_dung_tiem_nang"
+    "parentId": "n2"
   },
   {
-    "id": "ua_khai_thac_du_lieu",
-    "text": "Khai thác dữ liệu (văn bản, hình ảnh, âm thanh)",
+    "id": "n2_4_1",
+    "text": "Bước 1: Cài đặt",
     "x": 1270.0,
     "y": 330.0,
-    "parentId": "ua_phan_tich_quyet_dinh"
+    "parentId": "n2_4"
   },
   {
-    "id": "ua_rut_ra_insight",
-    "text": "Rút ra insight",
+    "id": "n2_4_1_1",
+    "text": "`pip install langchain-huggingface`",
+    "x": 1520.0,
+    "y": 330.0,
+    "parentId": "n2_4_1"
+  },
+  {
+    "id": "n2_4_2",
+    "text": "Bước 2: Tìm Hugging Face API Token",
     "x": 1270.0,
     "y": 430.0,
-    "parentId": "ua_phan_tich_quyet_dinh"
+    "parentId": "n2_4"
   },
   {
-    "id": "ua_dai_ly_tu_hanh",
-    "text": "Đại lý AI tự hành (Autonomous Agents)",
-    "x": 1020.0,
-    "y": 480.0,
-    "parentId": "ung_dung_tiem_nang"
-  },
-  {
-    "id": "ua_tu_suy_luan",
-    "text": "Tự suy luận",
-    "x": 1270.0,
-    "y": 380.0,
-    "parentId": "ua_dai_ly_tu_hanh"
-  },
-  {
-    "id": "ua_su_dung_cong_cu",
-    "text": "Sử dụng công cụ (web, email, code)",
-    "x": 1270.0,
-    "y": 480.0,
-    "parentId": "ua_dai_ly_tu_hanh"
-  },
-  {
-    "id": "ua_hoan_thanh_muc_tieu",
-    "text": "Hoàn thành mục tiêu",
-    "x": 1270.0,
-    "y": 580.0,
-    "parentId": "ua_dai_ly_tu_hanh"
-  },
-  {
-    "id": "ua_linh_vuc_cu_the",
-    "text": "Lĩnh vực tiềm năng cụ thể",
-    "x": 1020.0,
-    "y": 580.0,
-    "parentId": "ung_dung_tiem_nang"
-  },
-  {
-    "id": "ua_cntt",
-    "text": "CNTT: Phát triển ứng dụng và tính năng AI",
-    "x": 1270.0,
-    "y": 380.0,
-    "parentId": "ua_linh_vuc_cu_the"
-  },
-  {
-    "id": "ua_marketing_kinh_doanh",
-    "text": "Marketing & Kinh doanh",
-    "x": 1270.0,
-    "y": 480.0,
-    "parentId": "ua_linh_vuc_cu_the"
-  },
-  {
-    "id": "ua_chatbot_moi",
-    "text": "Chatbot thế hệ mới (truy cập lịch sử giao dịch, chính sách bảo hành)",
+    "id": "n2_4_2_1",
+    "text": "Tìm tại: https://huggingface.co/docs/hub/security-tokens",
     "x": 1520.0,
-    "y": 430.0,
-    "parentId": "ua_marketing_kinh_doanh"
+    "y": 380.0,
+    "parentId": "n2_4_2"
   },
   {
-    "id": "ua_tu_van_sp_ca_nhan",
-    "text": "Tư vấn sản phẩm (sở thích cá nhân, lịch sử truy cập)",
+    "id": "n2_4_2_2",
+    "text": "Lưu vào biến môi trường `HUGGINGFACEHUB_API_TOKEN`",
     "x": 1520.0,
-    "y": 530.0,
-    "parentId": "ua_marketing_kinh_doanh"
+    "y": 480.0,
+    "parentId": "n2_4_2"
   },
   {
-    "id": "ua_giao_duc",
-    "text": "Giáo dục: Học tập cá nhân hóa, trợ giảng ảo",
-    "x": 1270.0,
-    "y": 580.0,
-    "parentId": "ua_linh_vuc_cu_the"
-  },
-  {
-    "id": "ua_phan_tich_du_lieu",
-    "text": "Phân tích dữ liệu: Kết nối LLM với SQL DB (hỏi đáp ngôn ngữ tự nhiên)",
-    "x": 1270.0,
-    "y": 680.0,
-    "parentId": "ua_linh_vuc_cu_the"
-  },
-  {
-    "id": "ua_thuong_mai_dien_tu",
-    "text": "Thương mại điện tử: Chatbot, gợi ý, mô tả",
-    "x": 1270.0,
-    "y": 780.0,
-    "parentId": "ua_linh_vuc_cu_the"
-  },
-  {
-    "id": "he_thong_da_tac_nhan",
-    "text": "Hệ thống đa tác nhân (Multi-Agent System)",
+    "id": "n3",
+    "text": "3. LangGraph",
     "x": 770.0,
-    "y": 480.0,
+    "y": 330.0,
     "parentId": "root"
   },
   {
-    "id": "ht_khai_niem",
-    "text": "Khái niệm: Xây dựng nhiều tác nhân tương tác",
+    "id": "n3_1",
+    "text": "Giới thiệu",
+    "x": 1020.0,
+    "y": 230.0,
+    "parentId": "n3"
+  },
+  {
+    "id": "n3_1_1",
+    "text": "Minh họa xây dựng AI Agent đơn giản",
+    "x": 1270.0,
+    "y": 180.0,
+    "parentId": "n3_1"
+  },
+  {
+    "id": "n3_1_2",
+    "text": "Sử dụng Graph API",
+    "x": 1270.0,
+    "y": 280.0,
+    "parentId": "n3_1"
+  },
+  {
+    "id": "n3_2",
+    "text": "Cài đặt",
+    "x": 1020.0,
+    "y": 330.0,
+    "parentId": "n3"
+  },
+  {
+    "id": "n3_2_1",
+    "text": "`pip install -U langgraph`",
+    "x": 1270.0,
+    "y": 230.0,
+    "parentId": "n3_2"
+  },
+  {
+    "id": "n3_2_2",
+    "text": "Cài đặt thư viện liên quan: `pip install langchain openai`",
+    "x": 1270.0,
+    "y": 330.0,
+    "parentId": "n3_2"
+  },
+  {
+    "id": "n3_2_3",
+    "text": "Kiểm tra: `import langgraph`",
+    "x": 1270.0,
+    "y": 430.0,
+    "parentId": "n3_2"
+  },
+  {
+    "id": "n3_3",
+    "text": "Minh họa sử dụng",
+    "x": 1020.0,
+    "y": 430.0,
+    "parentId": "n3"
+  },
+  {
+    "id": "n3_3_1",
+    "text": "Ví dụ (Test_Agent.py)",
+    "x": 1270.0,
+    "y": 430.0,
+    "parentId": "n3_3"
+  },
+  {
+    "id": "n3_3_1_1",
+    "text": "Khởi tạo ChatOllama",
+    "x": 1520.0,
+    "y": 280.0,
+    "parentId": "n3_3_1"
+  },
+  {
+    "id": "n3_3_1_2",
+    "text": "Sử dụng `.bind_tools(tools)`",
+    "x": 1520.0,
+    "y": 380.0,
+    "parentId": "n3_3_1"
+  },
+  {
+    "id": "n3_3_1_3",
+    "text": "Xây dựng agent bằng `build_agent`",
+    "x": 1520.0,
+    "y": 480.0,
+    "parentId": "n3_3_1"
+  },
+  {
+    "id": "n3_3_1_4",
+    "text": "Gọi agent bằng `agent.invoke(state)`",
+    "x": 1520.0,
+    "y": 580.0,
+    "parentId": "n3_3_1"
+  },
+  {
+    "id": "n4",
+    "text": "4. Môi trường & Cài đặt Chung",
+    "x": 770.0,
+    "y": 430.0,
+    "parentId": "root"
+  },
+  {
+    "id": "n4_1",
+    "text": "Mục đích sử dụng LLM trong LangChain",
     "x": 1020.0,
     "y": 380.0,
-    "parentId": "he_thong_da_tac_nhan"
+    "parentId": "n4"
   },
   {
-    "id": "ht_loai_su_dung",
-    "text": "Loại thường dùng: Hierarchical Multi-Agent System (Phân cấp)",
-    "x": 1020.0,
-    "y": 480.0,
-    "parentId": "he_thong_da_tac_nhan"
+    "id": "n4_1_1",
+    "text": "Phân tích yêu cầu của người dùng",
+    "x": 1270.0,
+    "y": 280.0,
+    "parentId": "n4_1"
   },
   {
-    "id": "ht_ly_do",
-    "text": "Lý do: Xây dựng và giám sát các tác nhân hành động",
+    "id": "n4_1_2",
+    "text": "Xử lý ngôn ngữ tự nhiên",
+    "x": 1270.0,
+    "y": 380.0,
+    "parentId": "n4_1"
+  },
+  {
+    "id": "n4_1_3",
+    "text": "Đề xuất lịch trình cá nhân phù hợp",
     "x": 1270.0,
     "y": 480.0,
-    "parentId": "ht_loai_su_dung"
+    "parentId": "n4_1"
   },
   {
-    "id": "ht_vi_du_lich_trinh",
-    "text": "Ví dụ: Đề xuất lịch trình cá nhân",
+    "id": "n4_2",
+    "text": "Chuẩn bị môi trường làm việc",
     "x": 1020.0,
-    "y": 580.0,
-    "parentId": "he_thong_da_tac_nhan"
+    "y": 480.0,
+    "parentId": "n4"
   },
   {
-    "id": "ht_tac_nhan_con_1",
-    "text": "Tác nhân con 1: Kiểm tra ràng buộc thời gian",
+    "id": "n4_2_1",
+    "text": "Ngôn ngữ lập trình: Python",
+    "x": 1270.0,
+    "y": 330.0,
+    "parentId": "n4_2"
+  },
+  {
+    "id": "n4_2_2",
+    "text": "Trình quản lý gói: pip",
+    "x": 1270.0,
+    "y": 430.0,
+    "parentId": "n4_2"
+  },
+  {
+    "id": "n4_2_3",
+    "text": "API Key: Hugging Face (tạo trên trang web)",
     "x": 1270.0,
     "y": 530.0,
-    "parentId": "ht_vi_du_lich_trinh"
+    "parentId": "n4_2"
   },
   {
-    "id": "ht_tac_nhan_con_2",
-    "text": "Tác nhân con 2: Xử lý các nhiệm vụ khác",
+    "id": "n4_2_4",
+    "text": "Thư viện/Framework cần thiết",
     "x": 1270.0,
     "y": 630.0,
-    "parentId": "ht_vi_du_lich_trinh"
+    "parentId": "n4_2"
+  },
+  {
+    "id": "n4_2_4_1",
+    "text": "OpenAI (v2.17.0)",
+    "x": 1520.0,
+    "y": 480.0,
+    "parentId": "n4_2_4"
+  },
+  {
+    "id": "n4_2_4_2",
+    "text": "Pandas (v3.0.0)",
+    "x": 1520.0,
+    "y": 580.0,
+    "parentId": "n4_2_4"
+  },
+  {
+    "id": "n4_2_4_3",
+    "text": "Python-dotenv (v1.2.1)",
+    "x": 1520.0,
+    "y": 680.0,
+    "parentId": "n4_2_4"
+  },
+  {
+    "id": "n4_2_4_4",
+    "text": "LangChain (cài đặt qua pip)",
+    "x": 1520.0,
+    "y": 780.0,
+    "parentId": "n4_2_4"
   }
 ];

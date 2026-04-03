@@ -164,8 +164,8 @@ class ChatMessageRepository(BaseRepository):
                 },
                 "citations": {
                     "renderer": "gc_mindmap",
-                    "viewer": "src/tmp/gc_mindmap.html",
-                    "dataFile": "src/tmp/data.js",
+                    "viewer": "tmp/gc_mindmap.html",
+                    "dataFile": "tmp/data.js",
                 },
                 "createdAt": datetime.utcnow().isoformat(),
                 "isActive": True,
