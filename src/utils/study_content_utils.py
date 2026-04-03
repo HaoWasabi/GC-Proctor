@@ -1,8 +1,8 @@
 import json
 from typing import Any, Dict
-
+import re
 from utils.mindmap_builder import generate_mindmap_js
-
+import os
 
 def generate_mindmap_payload(study_svc, prompt: str, context: str, chunks: list, output_file: str = "src/tmp/data.js") -> Dict[str, Any]:
     """Generate mindmap nodes, persist as data.js and return payload for message entities."""
@@ -103,3 +103,37 @@ def find_related_sources_markdown(kb_service, prompt: str, course_code: str = "A
         return response
     except Exception as e:
         return f"⚠️ Lỗi khi tìm kiếm tài liệu: {e}"
+
+def generate_flashcards_payload(study_svc, prompt: str, output_file: str = "src/tmp/flashcard_data.js") -> Dict[str, Any]:
+    """Sử dụng backend sinh flashcard có sẵn và lưu ra file JS để render 3D"""
+    # 1. Gọi hàm backend CÓ SẴN của bạn (không chế prompt mới)
+    res = study_svc.generate_flashcards("ALL", prompt)
+    flashcards = res.get("flashcards", []) if isinstance(res, dict) else []
+
+    if not flashcards:
+        return {
+            "ok": False,
+            "message": res.get("message") if isinstance(res, dict) and res.get("message") else "⚠️ Không đủ dữ liệu tạo flashcard."
+        }
+
+    # 2. Đổi key 'question'/'answer' của bạn thành 'front'/'back' để giao diện HTML 3D hiểu
+    cards_for_html = []
+    for card in flashcards:
+        cards_for_html.append({
+            "front": card.get("question", ""),
+            "back": card.get("answer", "")
+        })
+
+    # 3. Ghi ra file flashcard_data.js giống hệt cách Mindmap làm
+    js_content = f"var externalFlashcards = {json.dumps(cards_for_html, ensure_ascii=False, indent=2)};"
+    output_dir = os.path.dirname(output_file)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+    with open(output_file, "w", encoding="utf-8") as f:
+        f.write(js_content)
+
+    return {
+        "ok": True,
+        "message": "🎉 Ta-da! Mình đã soạn xong bộ Flashcard 3D. Bạn nhấn nút bên dưới để học nhé!",
+        "cards": cards_for_html
+    }

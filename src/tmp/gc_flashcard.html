@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f8fafc; overflow: hidden; }
+    .flashcard-container { width: 450px; height: 250px; perspective: 1000px; margin-bottom: 20px; cursor: pointer; }
+    .flashcard { width: 100%; height: 100%; position: relative; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; }
+    .flashcard.is-flipped { transform: rotateY(180deg); }
+    .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; border-radius: 16px; font-size: 1.2rem; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .card-front { background: white; color: #1f2937; border: 2px solid #e5e7eb; }
+    .card-back { background: linear-gradient(135deg, #0f766e, #047857); color: white; transform: rotateY(180deg); }
+    .label { font-size: 0.8rem; font-weight: bold; opacity: 0.6; text-transform: uppercase; margin-bottom: 10px; }
+    .content { font-weight: 600; line-height: 1.5; }
+    .controls { display: flex; gap: 20px; align-items: center; }
+    button { padding: 10px 20px; border: none; border-radius: 999px; background: #2563eb; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(37,99,235,0.2); }
+    button:hover { background: #1d4ed8; transform: translateY(-2px); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .progress { font-weight: 600; color: #4b5563; min-width: 60px; text-align: center; background: white; padding: 8px 15px; border-radius: 999px; border: 1px solid #e5e7eb; }
+  </style>
+</head>
+<body>
+
+  <div class="flashcard-container" onclick="flipCard()">
+    <div class="flashcard" id="card">
+      <div class="card-face card-front">
+        <div class="label">Câu Hỏi</div>
+        <div class="content" id="frontText">Mặt trước</div>
+      </div>
+      <div class="card-face card-back">
+        <div class="label">Đáp Án</div>
+        <div class="content" id="backText">Mặt sau</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="prevCard()" id="btnPrev">❮ Trước</button>
+    <div class="progress" id="progressText">1 / 1</div>
+    <button onclick="nextCard()" id="btnNext">Sau ❯</button>
+  </div>
+
+  <script src="./flashcard_data.js"></script> 
+  
+  <script>
+    let cards = window.externalFlashcards || [
+      { front: "Xin chào!", back: "Bộ thẻ chưa nhận được dữ liệu, vui lòng hỏi lại AI." }
+    ];
+    let currentIndex = 0;
+    const cardEl = document.getElementById('card');
+
+    function updateView() {
+      if (!cards || cards.length === 0) return;
+      document.getElementById('frontText').innerText = cards[currentIndex].front;
+      document.getElementById('backText').innerText = cards[currentIndex].back;
+      document.getElementById('progressText').innerText = `${currentIndex + 1} / ${cards.length}`;
+      document.getElementById('btnPrev').disabled = currentIndex === 0;
+      document.getElementById('btnNext').disabled = currentIndex === cards.length - 1;
+      cardEl.classList.remove('is-flipped'); 
+    }
+
+    function flipCard() { cardEl.classList.toggle('is-flipped'); }
+    function prevCard() { if (currentIndex > 0) { currentIndex--; updateView(); } }
+    function nextCard() { if (currentIndex < cards.length - 1) { currentIndex++; updateView(); } }
+
+    updateView();
+  </script>
+</body>
+</html>

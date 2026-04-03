@@ -1,8 +1,9 @@
 from datetime import datetime
 from uuid import uuid4
+import re
 import json
 from pathlib import Path
-
+from utils.study_content_utils import generate_flashcards_markdown, generate_mindmap_payload, generate_flashcards_payload
 import streamlit as st
 import streamlit.components.v1 as components
 import time
@@ -21,7 +22,6 @@ from services.chat_session_service import ChatSessionService
 from services.chat_message_service import ChatMessageService
 from models.chat_session_model import ChatSessionModel
 from models.chat_message_model import ChatMessageModel
-from utils.study_content_utils import generate_flashcards_markdown, generate_mindmap_payload
 from utils.mindmap_builder import generate_mindmap_js
 import os
 import warnings
@@ -30,7 +30,6 @@ import warnings
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 warnings.filterwarnings("ignore", module="transformers")
-
 
 # ==========================================
 # 1. CẤU HÌNH & KHỞI TẠO STATE
@@ -70,6 +69,9 @@ chat_session_svc = services["chat_session_svc"]
 chat_message_svc = services["chat_message_svc"]
 
 # Khởi tạo các biến trạng thái (Session State) để lưu lịch sử và điều hướng
+if "inline_flashcard_payload" not in st.session_state:
+    st.session_state.inline_flashcard_payload = None
+
 if "page" not in st.session_state:
     st.session_state.page = "home" 
 if "role" not in st.session_state:
@@ -81,8 +83,7 @@ if "chat_quyche" not in st.session_state:
 if "chat_lichthi" not in st.session_state:
     st.session_state.chat_lichthi = [{"role": "assistant", "content": "Dưới đây là lịch thi của bạn. Bạn có thắc mắc gì về phòng máy, giờ thi hay môn thi không?"}]
 if "chat_ontap" not in st.session_state:
-    st.session_state.chat_ontap = [{"role": "assistant", "content"
-                                    : "Sẵn sàng ôn tập! Gửi cho tôi slide bài giảng hoặc chủ đề bạn muốn luyện tập."}]
+    st.session_state.chat_ontap = [{"role": "assistant", "content": "Sẵn sàng ôn tập! Gửi cho tôi slide bài giảng hoặc chủ đề bạn muốn luyện tập."}]
 if "chat_bot_guidance" not in st.session_state:
     st.session_state.chat_bot_guidance = [
         {
@@ -108,7 +109,6 @@ if "student_chat_force_new" not in st.session_state:
 if "admin_dashboard_view" not in st.session_state:
     st.session_state.admin_dashboard_view = "home"
 
-
 # Khởi tạo state cho yêu cầu hỗ trợ
 if "help_session_id" not in st.session_state:
     st.session_state.help_session_id = None
@@ -133,7 +133,6 @@ def navigate_to(page_name, role=None):
     if role:
         st.session_state.role = role
 
-
 def logout_portal_user():
     st.session_state.role = None
     st.session_state.page = "home"
@@ -141,7 +140,6 @@ def logout_portal_user():
     st.session_state.user_code = None
     st.session_state.user_id = None
     st.session_state.full_name = None
-
 
 def authenticate_portal_user(user_code: str, password: str, selected_role: str):
     normalized_user_code = _safe_str(user_code)
@@ -196,7 +194,6 @@ def _as_bool(value, default=True) -> bool:
         return default
     return _safe_str(value).lower() in {"1", "true", "yes", "y", "active", "on"}
 
-
 def _format_bot_transcript(messages, max_turns=12) -> str:
     recent_messages = messages[-max_turns:]
     lines = []
@@ -207,14 +204,12 @@ def _format_bot_transcript(messages, max_turns=12) -> str:
             lines.append(f"- {role}: {content}")
     return "\n".join(lines)
 
-
 def _get_open_help_request_count() -> int:
     try:
         result = help_request_service.get_help_sessions(include_closed=False, limit=500)
         return int(result.get("count", 0))
     except Exception:
         return 0
-
 
 STUDENT_CHAT_CHANNEL = "student_chat"
 STUDENT_CHAT_MODES = {
@@ -227,7 +222,7 @@ STUDENT_CHAT_MODES = {
     "exam": {
         "label": "Lich thi",
         "icon": "🗓️",
-        "welcome": "Xin chào! Tôi là trợ lý Lịch thi. ạn cần kiểm tra lịch thi nào?",
+        "welcome": "Xin chào! Tôi là trợ lý Lịch thi. Bạn cần kiểm tra lịch thi nào?",
         "spinner": "Đang tra cứu lịch thi...",
     },
     "study": {
@@ -237,7 +232,6 @@ STUDENT_CHAT_MODES = {
         "spinner": "Đang tìm nội dung ôn tập...",
     },
 }
-
 
 def _parse_datetime(value):
     if value is None:
@@ -249,33 +243,27 @@ def _parse_datetime(value):
     except Exception:
         return datetime.min
 
-
 def _format_datetime_short(value) -> str:
     dt = _parse_datetime(value)
     if dt == datetime.min:
         return ""
     return dt.strftime("%d/%m %H:%M")
 
-
 def _mode_label(mode: str) -> str:
     mode_key = _safe_str(mode).lower()
     return STUDENT_CHAT_MODES.get(mode_key, {}).get("label", "Unknown")
-
 
 def _mode_icon(mode: str) -> str:
     mode_key = _safe_str(mode).lower()
     return STUDENT_CHAT_MODES.get(mode_key, {}).get("icon", "💬")
 
-
 def _mode_welcome(mode: str) -> str:
     mode_key = _safe_str(mode).lower()
     return STUDENT_CHAT_MODES.get(mode_key, {}).get("welcome", "Xin chao! Ban can ho tro gi?")
 
-
 def _mode_spinner(mode: str) -> str:
     mode_key = _safe_str(mode).lower()
     return STUDENT_CHAT_MODES.get(mode_key, {}).get("spinner", "Dang xu ly...")
-
 
 def _resolve_workspace_path(path_str: str) -> Path:
     normalized = _safe_str(path_str).replace("\\", "/")
@@ -294,7 +282,6 @@ def _resolve_workspace_path(path_str: str) -> Path:
             return candidate
 
     return candidates[0]
-
 
 def _render_mindmap_inline(nodes: list, viewer_file: str) -> None:
     viewer_path = _resolve_workspace_path(viewer_file or "src/tmp/gc_mindmap.html")
@@ -317,7 +304,6 @@ def _render_mindmap_inline(nodes: list, viewer_file: str) -> None:
     st.markdown("### 🗺️ Sơ đồ tư duy")
     components.html(html_text, height=760, scrolling=True)
 
-
 def _show_inline_mindmap_panel() -> None:
     payload = st.session_state.get("inline_mindmap_payload")
     if not isinstance(payload, dict):
@@ -336,7 +322,6 @@ def _show_inline_mindmap_panel() -> None:
 
     _render_mindmap_inline(nodes, viewer)
 
-
 def _is_mindmap_request(prompt: str) -> bool:
     normalized = _safe_str(prompt).lower()
     keywords = [
@@ -349,6 +334,60 @@ def _is_mindmap_request(prompt: str) -> bool:
     ]
     return any(keyword in normalized for keyword in keywords)
 
+def _is_flashcard_request(prompt: str) -> bool:
+    normalized = _safe_str(prompt).lower()
+    keywords = [
+        "flashcard",
+        "flash card",
+        "thẻ ghi nhớ",
+        "the ghi nho",
+        "tạo thẻ",
+    ]
+    return any(keyword in normalized for keyword in keywords)
+
+def generate_flashcard_js_file(cards: list, output_file: str = "src/tmp/flashcard_data.js") -> None:
+    """Tạo file data.js cho Flashcard từ dữ liệu mảng (giống luồng Mindmap)"""
+    import os
+    import json
+    js_content = f"window.externalFlashcards = {json.dumps(cards, ensure_ascii=False, indent=2)};"
+    output_dir = os.path.dirname(output_file)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+    with open(output_file, "w", encoding="utf-8") as f:
+        f.write(js_content)
+
+def _show_inline_flashcard_panel() -> None:
+    payload = st.session_state.get("inline_flashcard_payload")
+    if not isinstance(payload, dict):
+        return
+
+    viewer_file = payload.get("viewer", "src/tmp/gc_flashcard.html")
+    data_file = payload.get("dataFile", "src/tmp/flashcard_data.js")
+
+    col_open, col_close = st.columns([5, 1])
+    with col_close:
+        if st.button("✖ Đóng", key="close_inline_flashcard", use_container_width=True):
+            st.session_state.inline_flashcard_payload = None
+            st.rerun()
+
+    viewer_path = _resolve_workspace_path(viewer_file)
+    data_path = _resolve_workspace_path(data_file)
+
+    if viewer_path.exists():
+        html_text = viewer_path.read_text(encoding="utf-8")
+        
+        # Đọc dữ liệu thẻ đã nạp từ file flashcard_data.js
+        js_content = data_path.read_text(encoding="utf-8") if data_path.exists() else "window.externalFlashcards = [];"
+
+        # Thay thế dòng import bằng đúng dữ liệu vừa đọc
+        replacement_script = f"<script>\n{js_content}\n</script>"
+        if '<script src="./flashcard_data.js"></script>' in html_text:
+            html_text = html_text.replace('<script src="./flashcard_data.js"></script>', replacement_script, 1)
+        else:
+            html_text = replacement_script + "\n" + html_text
+
+        st.markdown("### 🗂️ Thẻ Ghi Nhớ 3D")
+        components.html(html_text, height=350, scrolling=False)
 
 def _create_student_chat_session(user_id: str, mode: str) -> str:
     session_id = f"chat-{int(datetime.utcnow().timestamp() * 1000)}-{uuid4().hex[:6]}"
@@ -367,7 +406,6 @@ def _create_student_chat_session(user_id: str, mode: str) -> str:
         raise RuntimeError("Khong tao duoc chat session")
     _append_chat_message(session_id, "assistant", _mode_welcome(mode), mode)
     return session_id
-
 
 def _append_chat_message(
     session_id: str,
@@ -400,7 +438,6 @@ def _append_chat_message(
         raise RuntimeError("Không lưu được tin nhắn chat")
     return created_id
 
-
 def _load_student_sessions(user_id: str):
     if not user_id:
         return []
@@ -423,7 +460,6 @@ def _load_student_sessions(user_id: str):
     sessions.sort(key=lambda x: _parse_datetime(x.get("started_at")), reverse=True)
     return sessions
 
-
 def _load_session_messages(session_id: str, limit: int = 200):
     if not session_id:
         return []
@@ -432,12 +468,16 @@ def _load_session_messages(session_id: str, limit: int = 200):
         links = []
         entities = msg.get_entities() or {}
         mindmap_nodes = []
+        flashcard_cards = [] 
+        
         if isinstance(entities, dict):
             candidate_links = entities.get("links")
             if isinstance(candidate_links, list):
                 links = candidate_links
             if entities.get("type") == "mindmap" and isinstance(entities.get("nodes"), list):
                 mindmap_nodes = entities.get("nodes")
+            if entities.get("type") == "flashcard" and isinstance(entities.get("cards"), list):
+                flashcard_cards = entities.get("cards")
 
         citations = msg.get_citations() or {}
         messages.append(
@@ -447,12 +487,12 @@ def _load_session_messages(session_id: str, limit: int = 200):
                 "created_at": msg.get_createdAt(),
                 "links": links,
                 "mindmap_nodes": mindmap_nodes,
+                "flashcard_cards": flashcard_cards, 
                 "citations": citations if isinstance(citations, dict) else {},
             }
         )
     messages.sort(key=lambda x: _parse_datetime(x.get("created_at")))
     return messages
-
 
 def _get_session_mode(session_id: str, fallback_mode: str = "regulation") -> str:
     if not session_id:
@@ -462,7 +502,6 @@ def _get_session_mode(session_id: str, fallback_mode: str = "regulation") -> str
         return fallback_mode
     mode = _safe_str(session.get_persona()).lower()
     return mode if mode in STUDENT_CHAT_MODES else fallback_mode
-
 
 def _generate_unified_chat_answer(mode: str, prompt: str, student_id: str):
     mode_key = _safe_str(mode).lower()
@@ -500,6 +539,14 @@ def _generate_unified_chat_answer(mode: str, prompt: str, student_id: str):
             return mindmap_result.get("message", "Đã tạo sơ đồ tư duy."), [], entities, citations, "provide_mindmap"
         return mindmap_result.get("message", "Không thể tạo sơ đồ tư duy."), [], {}, {}, mode_key
 
+    if _is_flashcard_request(prompt):
+        flashcard_result = generate_flashcards_payload(study_svc, prompt)
+        cards = flashcard_result.get("cards", []) if isinstance(flashcard_result, dict) else []
+        if flashcard_result.get("ok") and cards:
+            entities = {"type": "flashcard", "cards": cards}
+            return flashcard_result.get("message", "Đã tạo thẻ ghi nhớ."), [], entities, {}, "provide_flashcard"
+        return flashcard_result.get("message", "Không thể tạo thẻ ghi nhớ."), [], {}, {}, mode_key
+
     sys_prompt = (
         "Bạn là trợ lý ôn tập cho sinh viên. "
         "Chỉ được phép trả lời dựa trên tài liệu được cung cấp. "
@@ -509,7 +556,6 @@ def _generate_unified_chat_answer(mode: str, prompt: str, student_id: str):
     )
     response = study_svc.model.generate_content(sys_prompt)
     return response.text, [], {}, {}, mode_key
-
 
 def render_unified_student_chat_page():
     st.header("GC Proctor")
@@ -584,6 +630,7 @@ def render_unified_student_chat_page():
                 if title and url:
                     st.caption(f"🔗 [Nguon: {title}]({url})")
 
+            # --- RENDER NÚT MINDMAP ---
             mindmap_nodes = msg.get("mindmap_nodes", [])
             if isinstance(mindmap_nodes, list) and mindmap_nodes:
                 citations = msg.get("citations", {}) if isinstance(msg.get("citations"), dict) else {}
@@ -603,7 +650,30 @@ def render_unified_student_chat_page():
                         st.rerun()
                     except Exception as e:
                         st.error(f"❌ Không thể render sơ đồ: {e}")
+            
+            # --- RENDER NÚT FLASHCARD ---
+            flashcard_cards = msg.get("flashcard_cards", [])
+            if isinstance(flashcard_cards, list) and flashcard_cards:
+                fc_viewer_file = "src/tmp/gc_flashcard.html"
+                fc_data_file = "src/tmp/flashcard_data.js"
+                
+                if st.button("🗂️ Học Flashcard", key=f"view_flashcard_{active_session_id}_{idx}"):
+                    try:
+                        # Nạp dữ liệu ra file trước
+                        generate_flashcard_js_file(flashcard_cards, fc_data_file)
+                        
+                        st.session_state.inline_flashcard_payload = {
+                            "cards": flashcard_cards,
+                            "viewer": fc_viewer_file,
+                            "dataFile": fc_data_file
+                        }
+                        st.success(f"✅ Đã nạp dữ liệu thẻ tại {fc_data_file}.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Không thể nạp Flashcard: {e}")
 
+    # PHẢI GỌI Ở NGOÀI VÒNG LẶP FOR ĐỂ VIEW ĐƯỢC HIỂN THỊ ĐÚNG CHỖ
+    _show_inline_flashcard_panel()
     _show_inline_mindmap_panel()
 
     if prompt := st.chat_input("Hoi tiep trong session hien tai..."):
@@ -798,9 +868,6 @@ def render_chat_ui(chat_history_key, title, subtitle, is_rag=False, is_exam_look
 # ==========================================
 
 if st.session_state.page == "home":
-    # st.markdown("<h1 style='text-align: center;'>GC-Proctor</h1>", unsafe_allow_html=True)
-    # st.markdown("<p style='text-align: center;'>Đăng nhập bằng mã số, mật khẩu và chọn đúng role.</p><br>", unsafe_allow_html=True)
-
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
@@ -942,6 +1009,8 @@ elif st.session_state.page == "chat_ontap":
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
                 entities = message.get("entities", {}) if isinstance(message, dict) else {}
+                
+                # --- Nút xem Mindmap ---
                 if isinstance(entities, dict) and entities.get("type") == "mindmap" and isinstance(entities.get("nodes"), list):
                     if st.button("🗺️ Xem sơ đồ", key=f"legacy_mindmap_btn_{idx}"):
                         try:
@@ -959,6 +1028,27 @@ elif st.session_state.page == "chat_ontap":
                         except Exception as e:
                             st.error(f"❌ Không thể render sơ đồ: {e}")
 
+                # --- Nút xem Flashcard ---
+                if isinstance(entities, dict) and entities.get("type") == "flashcard":
+                    if st.button("🗂️ Học Flashcard", key=f"flashcard_btn_{idx}"):
+                        try:
+                            cards_data = entities.get("cards", [])
+                            fc_data_file = "src/tmp/flashcard_data.js"
+                            
+                            # Nạp dữ liệu ra file
+                            generate_flashcard_js_file(cards_data, fc_data_file)
+                            
+                            st.session_state.inline_flashcard_payload = {
+                                "cards": cards_data,
+                                "viewer": "src/tmp/gc_flashcard.html",
+                                "dataFile": fc_data_file
+                            }
+                            st.success(f"✅ Đã nạp dữ liệu thẻ tại {fc_data_file}.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Lỗi: {e}")
+
+    _show_inline_flashcard_panel()
     _show_inline_mindmap_panel()
 
     # Ô nhập liệu duy nhất
@@ -1034,7 +1124,20 @@ elif st.session_state.page == "chat_ontap":
                         # --- NHÁNH 4: TẠO FLASHCARD ---
                         elif "ACTION_FLASHCARD" in llm_response:
                             message_placeholder.markdown("🗂️ *Đang soạn thẻ ghi nhớ cho bạn đây...*")
-                            ai_response = generate_flashcards_markdown(study_svc, prompt)
+                            
+                            # Gọi hàm (chỉ truyền đúng 2 tham số như định nghĩa)
+                            flashcard_result = generate_flashcards_payload(study_svc, prompt)
+                            
+                            if flashcard_result.get("ok"):
+                                # BẮT BUỘC PHẢI CÓ biến cards này để giao diện đọc được
+                                retrieved_cards = flashcard_result.get("cards", [])
+                                assistant_entities = {
+                                    "type": "flashcard",
+                                    "cards": retrieved_cards 
+                                }
+                                ai_response = "✅ Đã tạo bộ thẻ ghi nhớ thành công! Bạn nhấn nút **🗂️ Học Flashcard** bên dưới để lật thẻ nhé."
+                            else:
+                                ai_response = f"⚠️ Không thể tạo thẻ ghi nhớ: {flashcard_result.get('message')}"
 
                         # --- NHÁNH 5: TRẢ LỜI BÌNH THƯỜNG ---
                         else:
@@ -1049,6 +1152,7 @@ elif st.session_state.page == "chat_ontap":
                 if assistant_entities:
                     assistant_payload["entities"] = assistant_entities
                 st.session_state.chat_ontap.append(assistant_payload)
+                st.rerun()
 
 elif st.session_state.page == "chat_bot_guidance":
     st.header("Yêu cầu hỗ trợ")
@@ -1247,7 +1351,6 @@ elif st.session_state.page == "chat_bot_guidance":
                 st.info("Phiên này đã đóng. Bạn có thể tạo yêu cầu mới nếu cần.")
         except Exception as e:
             st.error(f"❌ Không thể tải chi tiết phiên hỏi admin từ botchat: {str(e)}")
-
 
 # ----------------------------------------
 # TRANG ADMIN: QUẢN LÝ DỮ LIỆU
