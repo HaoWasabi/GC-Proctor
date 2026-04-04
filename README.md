@@ -1,60 +1,136 @@
 # GC-Proctor
 
-## Introduction
-* GC-Proctor is a next-generation AI Chatbot solution developed by the GCdev26 team from the Greencode community. The project was born with the mission to eliminate barriers of complex regulations, overlapping exam schedules, and revision pressure, helping students and lecturers optimize the examination experience.
+GC-Proctor là hệ thống chatbot hỗ trợ khảo thí và học tập, gồm các luồng chính:
 
-* GC-Proctor là giải pháp Chatbot AI thế hệ mới được phát triển bởi tổ đội GCdev26 từ cộng đồng Greencode. Dự án ra đời với sứ mệnh xóa tan những rào cản về quy chế phức tạp, lịch thi chồng chéo và áp lực ôn tập, giúp sinh viên và giảng viên tối ưu hóa trải nghiệm khảo thí.
+- Tra cứu quy chế
+- Tra cứu lịch thi
+- Ôn tập theo tài liệu (mindmap, flashcard, quiz)
+- Hỗ trợ sinh viên với luồng bot -> admin
 
-### Resources
+## 1. Yêu cầu môi trường
 
-* [Project Report](https://youtu.be/dQw4w9WgXcQ?si=hLIbE11aBkE04_ls)
+- Python 3.10+ (khuyến nghị 3.11)
+- Windows/Linux/macOS đều chạy được
+- Có tài khoản Firebase service account
+- Có API key cho Gemini
 
-* [Presentation Slides](https://youtu.be/dQw4w9WgXcQ?si=hLIbE11aBkE04_ls)
+## 2. Cài đặt dự án
 
-## Cấu trúc dự án hiện tại
+Tại thư mục gốc dự án:
+
+```bash
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# Linux/macOS
+source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+## 3. Tạo configs
+
+Tạo thư mục cấu hình nếu chưa có:
+
+```bash
+mkdir -p src/configs
+```
+
+Đặt file service account của Firebase tại:
+
+- `src/configs/serviceAccount.json`
+
+Luu y:
+
+- Không commit file credentials thật lên Git.
+- Nên thêm `src/configs/*.json` vào `.gitignore` nếu chưa có.
+
+## 4. Tạo file .env
+
+Tạo file `src/.env` với nội dung mẫu:
+
+```env
+# Bat buoc
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+
+# Chon 1 trong 2 cach cap Firebase credentials
+# Cach 1 (de dung nhat): tro toi file json
+FIREBASE_CREDENTIALS_PATH=src/configs/serviceAccount.json
+
+# Cach 2: JSON credentials dang chuoi (neu deploy qua secret)
+# FIREBASE_CREDENTIALS_JSON={"type":"service_account",...}
+
+# Tuy chon cho real API tests
+RUN_REAL_API_TESTS=0
+REAL_TEST_STUDENT_ID=SV001
+```
+
+## 5. Chạy ứng dụng
+
+Từ thư mục gốc dự án:
+
+```bash
+streamlit run src/app.py
+```
+
+Sau khi chạy, mở URL do Streamlit in ra (mặc định `http://localhost:8501`).
+
+## 6. Chạy test
+
+Test unit:
+
+```bash
+python -m unittest discover src/tests -v
+```
+
+Test gọi API thật (cần bật env):
+
+```bash
+# Windows PowerShell
+$env:RUN_REAL_API_TESTS="1"
+python -m unittest src/tests/test_answer_regulation_question_real_api.py -v
+python -m unittest src/tests/test_answer_exam_question_real_api.py -v
+```
+
+## 7. Cấu trúc chính
 
 ```text
 GC-Proctor/
 ├── README.md
 ├── requirements.txt
 ├── doc/
+│   ├── PRD.md
 │   ├── ERD.md
-│   └── PRD.md
-└── src/
-    ├── ai_models/
-    └── app/
-        ├── main.py
-        ├── controllers/
-        ├── dtos/
-        ├── models/
-        ├── services/
-        └── views/
+│   └── API_CONTRACT_P0.md
+├── src/
+│   ├── app.py
+│   ├── configs/
+│   ├── models/
+│   ├── repositories/
+│   ├── services/
+│   ├── tests/
+│   └── utils/
+└── tmp/
 ```
 
-### Định nghĩa vai trò theo thư mục
+## 8. Lưu ý vận hành
 
-- `README.md`: mô tả tổng quan dự án, tài nguyên, hướng dẫn sử dụng.
-- `requirements.txt`: danh sách dependency Python của toàn bộ hệ thống.
-- `doc/`: tài liệu phân tích và thiết kế.
-  - `PRD.md`: mô tả yêu cầu sản phẩm và luồng nghiệp vụ chính.
-  - `ERD.md`: thiết kế dữ liệu (NoSQL-centric) cho chatbot, lịch thi, và RAG.
-- `src/`: mã nguồn chính.
-  - `ai_models/`: nơi đặt các thành phần AI/ML (pipeline RAG, prompt, model adapters, embedding/retriever).
-  - `app/`: tầng ứng dụng theo hướng module hóa.
-    - `main.py`: entrypoint khởi chạy ứng dụng (hiện tại đang để trống, sẵn sàng triển khai).
-    - `controllers/`: nhận request, điều phối use case, gọi service phù hợp.
-    - `services/`: chứa business logic và tích hợp ngoài (LLM, vector DB, API lịch thi).
-    - `models/`: định nghĩa entity/domain model dùng nội bộ.
-    - `dtos/`: cấu trúc dữ liệu trao đổi giữa các tầng (request/response contract).
-    - `views/`: chuẩn hóa dữ liệu trả về cho client/UI.
+- Dự án hiện đã thống nhất dùng 1 thư mục tạm ở root: `tmp/`.
+- Mindmap/Flashcard viewer và data files đều đọc/ghi trong `tmp/`.
+- Nếu gặp lỗi không thấy file viewer hoặc data, kiểm tra các file sau có tồn tại:
+  - `tmp/gc_mindmap.html`
+  - `tmp/gc_flashcard.html`
+  - `tmp/mindmap_data.js`
+  - `tmp/flashcard_data.js`
 
-### Gợi ý quy ước phát triển
+## 9. Troubleshooting nhanh
 
-- Mỗi tính năng mới nên tách theo luồng: `model -> service -> controller -> view`.
-- Giữ `controllers/` mỏng, không đặt nghiệp vụ phức tạp tại đây.
-- Logic AI (prompt template, retriever config, guardrail) nên gom trong `ai_models/` hoặc service chuyên biệt để dễ kiểm thử.
-- Khi bắt đầu implement, ưu tiên tạo thêm module theo domain: `exam`, `regulation`, `study_support`, `chat_session`.
+- Lỗi `GEMINI_API_KEY environment variable not set`
+  - Kiểm tra `src/.env` có `GEMINI_API_KEY`.
 
----
+- Lỗi Firebase credentials
+  - Kiểm tra `FIREBASE_CREDENTIALS_PATH` trỏ đúng file JSON.
+  - Hoặc cung cấp `FIREBASE_CREDENTIALS_JSON` hợp lệ.
 
-*GCdev - Innovative technology, sustainable future*
+- Lỗi tìm đường dẫn tmp
+  - Chạy app từ thư mục gốc bằng `streamlit run src/app.py`.
